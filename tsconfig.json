@@ -1,15 +1,21 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "outDir": "dist",
-    "baseUrl": "./src",
-    "resolveJsonModule": true
-  },
-  "include": ["src"]
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"esModuleInterop": true,
+		"typeRoots": ["./node_modules/@types", "./src/types"],
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"skipLibCheck": true,
+		"outDir": "dist",
+		"rootDir": "src", // Явно укажите исходную папку
+		"allowJs": true, // Разрешить компиляцию JavaScript файлов
+		"baseUrl": "./src",
+		"resolveJsonModule": true,
+		"paths": {
+			"@modules/*": ["src/modules/*"]
+		}
+	},
+	"include": ["src"] //"include": ["src/**/*"]
 }

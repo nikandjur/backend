@@ -1,11 +1,10 @@
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
-import { RedisService } from 'redis/redis.service'
-import { JwtUtils } from 'utils/jwt.utils'
-import { loginSchema, registerSchema } from './auth.schema'
-import { AuthService } from './auth.service'
-import { signTokens } from './auth.utils'
-
+import { loginSchema, registerSchema } from './auth.schema.js'
+import { AuthService } from './auth.service.js'
+import { signTokens } from './auth.utils.js'
+import { JwtUtils } from '../../utils/jwt.utils.js'
+import { RedisService } from '../../redis/redis.service.js'
 
 const service = new AuthService()
 
@@ -22,7 +21,6 @@ export const refresh = async (
 	}
 
 	try {
-		// const payload = jwt.verify(refreshToken, REFRESH_SECRET) as jwt.JwtPayload
 		const payload = JwtUtils.verifyRefreshToken(refreshToken) as jwt.JwtPayload
 
 		const isBlacklisted = await RedisService.isTokenBlacklisted(refreshToken)

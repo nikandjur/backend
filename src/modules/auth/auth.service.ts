@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import { comparePassword, hashPassword } from 'utils/password.utils'
-import { signTokens } from './auth.utils'
+import { comparePassword, hashPassword, signTokens } from './auth.utils.js'
 
 const prisma = new PrismaClient()
 

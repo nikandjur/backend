@@ -1,0 +1,16 @@
+# Исключаем всё, что не нужно в контейнере
+node_modules
+dist
+Dockerfile
+docker-compose.yml
+.dockerignore
+.env
+.env.local
+*.log
+*.test.ts
+*.spec.ts
+coverage
+.vscode
+.idea
+**/__tests__/
+**/*.md

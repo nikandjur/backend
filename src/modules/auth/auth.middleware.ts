@@ -1,23 +1,15 @@
-import { Request, Response, NextFunction } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
-import Redis from 'ioredis'
-import { AuthJwtPayload } from 'types/jwt'
+import { AuthJwtPayload } from '../../types/jwt'
+import { RedisService } from '../../redis/redis.service.js'
 
-const redis = new Redis()
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!
+const ACCESS_SECRET = process.env.JWT_SECRET || ''
 
-/**
- * 🔐 Middleware для защиты маршрутов
- * - Проверяет наличие access токена
- * - Валидирует его
- * - Проверяет blacklisted ли токен
- * - Добавляет данные пользователя в req.user
- */
 export const authenticate = async (
 	req: Request,
 	res: Response,
 	next: NextFunction
-) => {
+): Promise<void> => {
 	const authHeader = req.headers.authorization
 
 	if (!authHeader?.startsWith('Bearer ')) {
@@ -27,13 +19,13 @@ export const authenticate = async (
 
 	const token = authHeader.split(' ')[1]
 
-	const isBlacklisted = await redis.get(`bl_${token}`)
-	if (isBlacklisted) {
-		res.status(401).json({ error: 'Token blacklisted' })
-		return
-	}
-
 	try {
+		const isBlacklisted = await RedisService.isTokenBlacklisted(token)
+		if (isBlacklisted) {
+			res.status(401).json({ error: 'Token blacklisted' })
+			return
+		}
+
 		const payload = jwt.verify(token, ACCESS_SECRET) as AuthJwtPayload
 		req.user = payload
 		next()
@@ -41,4 +33,3 @@ export const authenticate = async (
 		res.status(401).json({ error: 'Invalid or expired token' })
 	}
 }
-

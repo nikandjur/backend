@@ -1,10 +1,11 @@
+import { Express } from 'express'
 import swaggerJSDoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
-import { Express } from 'express'
 
 const options: swaggerJSDoc.Options = {
 	definition: {
 		openapi: '3.0.0',
+		servers: [{ url: '/api' }],
 		info: {
 			title: 'Auth API',
 			version: '1.0.0',

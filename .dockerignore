@@ -4,8 +4,9 @@ dist
 Dockerfile
 docker-compose.yml
 .dockerignore
-.env
-.env.local
+# .env
+# .env.*
+*.sqlite
 *.log
 *.test.ts
 *.spec.ts

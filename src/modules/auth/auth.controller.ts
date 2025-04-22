@@ -1,95 +1,55 @@
-import { NextFunction, Request, Response } from 'express'
-import jwt from 'jsonwebtoken'
-import { loginSchema, registerSchema } from './auth.schema.js'
-import { AuthService } from './auth.service.js'
-import { signTokens } from './auth.utils.js'
-import { JwtUtils } from '../../utils/jwt.utils.js'
-import { RedisService } from '../../redis/redis.service.js'
+import { Request, Response } from 'express'
+import { authService } from './auth.service'
 
-const service = new AuthService()
-
-export const refresh = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
-): Promise<void> => {
-	const { refreshToken } = req.body
-
-	if (!refreshToken) {
-		res.status(400).json({ error: 'Refresh token required' })
-		return
-	}
-
+// Регистрация пользователя
+export const register = async (req: Request, res: Response) => {
+	const { email, password, name } = req.body
 	try {
-		const payload = JwtUtils.verifyRefreshToken(refreshToken) as jwt.JwtPayload
+		// Регистрация пользователя и создание сессии
+		const { user } = await authService.register(email, password, name)
 
-		const isBlacklisted = await RedisService.isTokenBlacklisted(refreshToken)
-		if (isBlacklisted) {
-			res.status(401).json({ error: 'Refresh token blacklisted' })
-			return
-		}
-
-		const newTokens = signTokens(payload.sub as string)
-		res.status(200).json(newTokens)
-	} catch (err) {
-		res.status(401).json({ error: 'Invalid refresh token' })
+		// Генерация sessionId после успешной регистрации
+		res.cookie('sessionId', user.id, {
+			httpOnly: true,
+			secure: true,
+			maxAge: 60 * 60 * 24 * 7 * 1000,
+		}) // 7 дней
+		res.status(201).json({ user })
+	} catch (error) {
+		res.status(400).json({ message: error.message })
 	}
 }
 
-export const logout = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
-): Promise<void> => {
-	const authHeader = req.headers.authorization
-
-	if (!authHeader?.startsWith('Bearer ')) {
-		res.status(400).json({ error: 'Token required' })
-		return
-	}
-
-	const token = authHeader.split(' ')[1]
-
+// Логин пользователя
+export const login = async (req: Request, res: Response) => {
+	const { email, password } = req.body
 	try {
-		// const decoded = jwt.decode(token) as jwt.JwtPayload
-		const decoded = JwtUtils.decodeToken(token) as jwt.JwtPayload
-		const exp = decoded?.exp
+		// Логин пользователя и создание сессии
+		const { user } = await authService.login(email, password)
 
-		if (exp) {
-			const ttl = exp - Math.floor(Date.now() / 1000)
-			await RedisService.setBlacklistToken(token, ttl)
-		}
+		// Генерация sessionId после успешного логина
+		res.cookie('sessionId', user.id, {
+			httpOnly: true,
+			secure: true,
+			maxAge: 60 * 60 * 24 * 7 * 1000,
+		}) // 7 дней
+		res.status(200).json({ user })
+	} catch (error) {
+		res.status(400).json({ message: error.message })
+	}
+}
 
+// Логаут пользователя
+export const logout = async (req: Request, res: Response) => {
+	const { sessionId } = req.cookies
+	try {
+		// Удаляем сессию из Redis
+		await authService.logout(sessionId)
+
+		// Очищаем cookie
+		res.clearCookie('sessionId')
 		res.status(200).json({ message: 'Logged out successfully' })
-	} catch (err) {
-		res.status(400).json({ error: 'Invalid token' })
-	}
-}
-
-export const register = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
-): Promise<void> => {
-	try {
-		const data = registerSchema.parse(req.body)
-		const result = await service.register(data.email, data.password, data.name)
-		res.status(201).json(result)
-	} catch (err: any) {
-		res.status(400).json({ error: err.message })
-	}
-}
-
-export const login = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
-): Promise<void> => {
-	try {
-		const data = loginSchema.parse(req.body)
-		const result = await service.login(data.email, data.password)
-		res.status(200).json(result)
-	} catch (err: any) {
-		res.status(400).json({ error: err.message })
+	} catch (error) {
+		res.status(400).json({ message: error.message })
 	}
 }

@@ -13,14 +13,15 @@ const options: swaggerJSDoc.Options = {
 		},
 		components: {
 			securitySchemes: {
-				bearerAuth: {
-					type: 'http',
-					scheme: 'bearer',
-					bearerFormat: 'JWT',
+				cookieAuth: {
+					type: 'apiKey',
+					in: 'cookie',
+					name: 'sessionId',
+					description: 'Авторизация через сессионный cookie sessionId',
 				},
 			},
 		},
-		security: [{ bearerAuth: [] }],
+		security: [{ cookieAuth: [] }],
 	},
 	apis: ['src/modules/**/*.ts'], // Все ts-файлы внутри modules
 }

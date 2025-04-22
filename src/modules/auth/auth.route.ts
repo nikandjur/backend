@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { login, logout, refresh, register } from './auth.controller.js'
-import { authenticate } from './auth.middleware.js'
+import { login, logout, register } from './auth.controller.js'
+import { authenticate } from './auth.middleware'
 
 const router = Router()
 
@@ -72,51 +72,15 @@ router.post('/login', login)
 
 /**
  * @swagger
- * /auth/refresh:
- *   post:
- *     summary: Обновление токенов
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - refreshToken
- *             properties:
- *               refreshToken:
- *                 type: string
- *     responses:
- *       200:
- *         description: Токены успешно обновлены
- *       401:
- *         description: Недействительный токен
- */
-router.post('/refresh', refresh)
-
-/**
- * @swagger
  * /auth/logout:
  *   post:
- *     summary: Выход пользователя (инвалидация access-токена)
+ *     summary: Выход пользователя (удаление sessionId из cookie)
  *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - accessToken
- *             properties:
- *               accessToken:
- *                 type: string
  *     responses:
  *       200:
  *         description: Успешный выход
  *       401:
- *         description: Неверный токен
+ *         description: Недействительный sessionId
  */
 router.post('/logout', logout)
 
@@ -127,7 +91,7 @@ router.post('/logout', logout)
  *     summary: Получить информацию о текущем пользователе
  *     tags: [Auth]
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Аутентифицированный пользователь
@@ -151,9 +115,7 @@ router.post('/logout', logout)
  *         description: Неавторизован
  */
 router.get('/me', authenticate, (req, res) => {
-  res.json({ message: 'You are authenticated', user: req.user })
+	res.json({ message: 'You are authenticated', user: req.user })
 })
 
 export default router
-
-

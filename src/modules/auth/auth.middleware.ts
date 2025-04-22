@@ -1,35 +1,39 @@
 import { NextFunction, Request, Response } from 'express'
-import jwt from 'jsonwebtoken'
-import { AuthJwtPayload } from '../../types/jwt'
-import { RedisService } from '../../redis/redis.service.js'
+import { RedisService } from '../../redis/redis.service'
 
-const ACCESS_SECRET = process.env.JWT_SECRET || ''
-
+/**
+ * Мидлвар для аутентификации через сессии
+ */
 export const authenticate = async (
 	req: Request,
 	res: Response,
 	next: NextFunction
 ): Promise<void> => {
-	const authHeader = req.headers.authorization
-
-	if (!authHeader?.startsWith('Bearer ')) {
-		res.status(401).json({ error: 'Access token required' })
-		return
-	}
-
-	const token = authHeader.split(' ')[1]
-
 	try {
-		const isBlacklisted = await RedisService.isTokenBlacklisted(token)
-		if (isBlacklisted) {
-			res.status(401).json({ error: 'Token blacklisted' })
-			return
+		// Извлекаем sessionId из cookies
+		const sessionId = req.cookies?.sessionId
+
+		if (!sessionId) {
+			 res.status(401).json({ error: 'No session cookie' })
+			 return
 		}
 
-		const payload = jwt.verify(token, ACCESS_SECRET) as AuthJwtPayload
-		req.user = payload
+		// Получаем сессию из Redis
+		const session = await RedisService.getJSON<{ userId: string }>(sessionId)
+
+		if (!session) {
+			 res.status(401).json({ error: 'Invalid session' })
+			 return
+		}
+
+		// Присваиваем userId в объект запроса
+		req.user = { id: session.userId }
+
+		// Переходим к следующему мидлвару или обработчику
 		next()
-	} catch (err) {
-		res.status(401).json({ error: 'Invalid or expired token' })
+	} catch (error) {
+		console.error('❌ Error during authentication:', error)
+		 res.status(500).json({ error: 'Internal server error' })
+		 return
 	}
 }

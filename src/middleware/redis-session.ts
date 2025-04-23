@@ -11,7 +11,8 @@ export const redisSession =
 				`sessions:${sessionId}`
 			)
 			if (session?.userId) {
-				req.user = { id: session.userId, email: '' }
+				req.user = { id: session.userId, email: '', name: '' } // Укажите нужные поля пользователя
+				// Если нужно, можно добавить дополнительные данные пользователя из БД
 			}
 			next()
 		} catch (error) {

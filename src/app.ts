@@ -6,9 +6,26 @@ import helmet from 'helmet'
 import { errorHandler } from './middleware/error-handler.js'
 import { redisSession } from './middleware/redis-session.js'
 import { authRouter } from './modules/auth/index.js'
+import userRouter from './modules/user/user.route.js'
+import { initMinio } from './modules/storage/storage.service.js'
+
+// Обработка необработанных Promise-отклонений
+process.on('unhandledRejection', (reason: unknown) => {
+	console.error('⚠️ Unhandled Rejection at:', reason)
+	// Здесь можно добавить отправку ошибки в Sentry/Logging сервис
+})
+
+// Инициализация MinIO
+initMinio()
+	.then(() => {
+		console.log('✅ Storage service ready')
+	})
+	.catch(error => {
+		console.error('⚠️ Storage service initialization warning:', error.message)
+	})
 
 const app = express()
-setupSwagger(app)
+
 // Базовые middleware
 app.use(
 	cors({
@@ -17,19 +34,32 @@ app.use(
 	})
 )
 app.use(helmet())
-app.use(express.json())
-app.use((req, _, next) => {
-	console.log('➡️ RAW headers', req.headers.cookie)
-	next()
-})
+app.use(express.json({ limit: '10kb' })) // Лимит размера JSON
+
+// Логирование входящих запросов (только для разработки)
+if (process.env.NODE_ENV === 'development') {
+	app.use((req, _, next) => {
+		console.log('➡️ Incoming request:', req.method, req.path)
+		next()
+	})
+}
 
 app.use(cookieParser())
 
 // Redis-сессии
 app.use(redisSession())
 
-// Роуты
+// Swagger документация
+setupSwagger(app)
+
+// API роуты
 app.use('/api/auth', authRouter)
+app.use('/api/user', userRouter)
+
+// Health check endpoint
+app.get('/health', (_, res) => {
+	res.status(200).json({ status: 'ok' })
+})
 
 // Обработка ошибок
 app.use(errorHandler)

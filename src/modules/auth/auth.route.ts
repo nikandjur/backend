@@ -1,6 +1,8 @@
 import { Router } from 'express'
-import { login, logout, register } from './auth.controller.js'
-import { authenticate } from './auth.middleware'
+import { validate } from '../../middleware/validation.js'
+import { getCurrentUser, login, logout, register } from './auth.controller.js'
+import { authenticate } from './auth.middleware.js'
+import { loginSchema, registerSchema } from './auth.schema.js'
 
 const router = Router()
 
@@ -13,7 +15,7 @@ const router = Router()
 
 /**
  * @swagger
- * /auth/register:
+ * /api/auth/register:
  *   post:
  *     summary: Регистрация нового пользователя
  *     tags: [Auth]
@@ -40,11 +42,11 @@ const router = Router()
  *       400:
  *         description: Ошибка валидации
  */
-router.post('/register', register)
+router.post('/register', validate(registerSchema), register)
 
 /**
  * @swagger
- * /auth/login:
+ * /api/auth/login:
  *   post:
  *     summary: Вход в систему
  *     tags: [Auth]
@@ -68,11 +70,11 @@ router.post('/register', register)
  *       400:
  *         description: Неверные данные
  */
-router.post('/login', login)
+router.post('/login', validate(loginSchema), login)
 
 /**
  * @swagger
- * /auth/logout:
+ * /api/auth/logout:
  *   post:
  *     summary: Выход пользователя (удаление sessionId из cookie)
  *     tags: [Auth]
@@ -86,7 +88,7 @@ router.post('/logout', logout)
 
 /**
  * @swagger
- * /auth/me:
+ * /api/auth/me:
  *   get:
  *     summary: Получить информацию о текущем пользователе
  *     tags: [Auth]
@@ -114,8 +116,6 @@ router.post('/logout', logout)
  *       401:
  *         description: Неавторизован
  */
-router.get('/me', authenticate, (req, res) => {
-	res.json({ message: 'You are authenticated', user: req.user })
-})
+router.get('/me', authenticate, getCurrentUser)
 
 export default router

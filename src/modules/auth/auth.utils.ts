@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { RedisService } from '../../redis/redis.service.js'
+import { redisService } from '../../redis/redis.service.js'
 import { comparePassword, hashPassword } from '../../utils/password.utils.js'
 
 // Конфигурация сессий
@@ -12,7 +12,7 @@ export const createSession = async (userId: string): Promise<string> => {
 	const sessionId = generateSessionId()
 
 	// Сохраняем сессию в Redis с временем жизни
-	await RedisService.setJSON(sessionId, { userId }, SESSION_CONFIG.ttl)
+	await redisService.setJSON(sessionId, { userId }, SESSION_CONFIG.ttl)
 
 	return sessionId
 }

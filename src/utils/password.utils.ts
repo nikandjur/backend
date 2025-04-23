@@ -1,43 +1,20 @@
 import bcrypt from 'bcryptjs'
 
-// Конфигурация хеширования
-const HASH_CONFIG = {
-	saltRounds: 12, // Оптимальное значение для баланса безопасности/производительности
-	minPasswordLength: 8,
-} as const
+const SALT_ROUNDS = 12
+const MIN_PASSWORD_LENGTH = 8
 
-/**
- * Валидация пароля перед хешированием
- */
-function validatePassword(password: string): void {
-	if (password.length < HASH_CONFIG.minPasswordLength) {
+export const hashPassword = (password: string): Promise<string> => {
+	if (password.length < MIN_PASSWORD_LENGTH) {
 		throw new Error(
-			`Password must be at least ${HASH_CONFIG.minPasswordLength} characters`
+			`Password must be at least ${MIN_PASSWORD_LENGTH} characters`
 		)
 	}
+	return bcrypt.hash(password, SALT_ROUNDS)
 }
 
-/**
- * Хеширование пароля
- */
-export async function hashPassword(password: string): Promise<string> {
-	validatePassword(password)
-	return await bcrypt.hash(password, HASH_CONFIG.saltRounds)
-}
-
-/**
- * Сравнение пароля с хешем
- */
-export async function comparePassword(
+export const comparePassword = (
 	password: string,
-	hashedPassword: string
-): Promise<boolean> {
-	if (!password || !hashedPassword) return false
-	return await bcrypt.compare(password, hashedPassword)
-}
-
-// Типы для лучшей документации
-export type PasswordUtils = {
-	hashPassword: typeof hashPassword
-	comparePassword: typeof comparePassword
+	hash: string
+): Promise<boolean> => {
+	return bcrypt.compare(password, hash)
 }

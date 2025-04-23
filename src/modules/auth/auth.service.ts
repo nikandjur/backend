@@ -1,73 +1,53 @@
-import { PrismaClient, User } from '@prisma/client'
-import { randomUUID } from 'crypto'
-import { RedisService } from '../../redis/redis.service'
-import { comparePassword, hashPassword } from './auth.utils'
+import { prisma } from '../../db.js'
+import { redisService } from '../../redis/redis.service.js'
+import { hashPassword, comparePassword } from './auth.utils'
 
-const prisma = new PrismaClient()
+const SESSION_TTL = 60 * 60 * 24 * 7 // 7 дней
 
-// Конфигурация сессий
-const SESSION_CONFIG = {
-	ttl: 60 * 60 * 24 * 7, // 7 дней
+export const createUserSession = async (userId: string) => {
+	const sessionId = crypto.randomUUID()
+	await redisService.setJSON(`sessions:${sessionId}`, { userId }, SESSION_TTL)
+	return sessionId
 }
 
-// Типы
-type SessionData = { userId: string }
-type AuthResult = { user: User }
+export const registerUser = async (
+	email: string,
+	password: string,
+	name: string
+) => {
+	const existing = await prisma.user.findUnique({ where: { email } })
+	if (existing) throw new Error('User already exists')
 
-// Основные функции
-export const authService = {
-	async register(
-		email: string,
-		password: string,
-		name: string
-	): Promise<AuthResult> {
-		const existing = await prisma.user.findUnique({ where: { email } })
-		if (existing) throw new Error('User already exists')
+	const user = await prisma.user.create({
+		data: {
+			email,
+			password: await hashPassword(password),
+			name,
+		},
+	})
 
-		const user = await prisma.user.create({
-			data: {
-				email,
-				password: await hashPassword(password),
-				name,
-			},
-		})
-
-		return createSession(user.id)
-	},
-
-	async login(email: string, password: string): Promise<AuthResult> {
-		const user = await prisma.user.findUnique({ where: { email } })
-		if (!user) throw new Error('User not found')
-
-		const isValid = await comparePassword(password, user.password)
-		if (!isValid) throw new Error('Invalid credentials')
-
-		return createSession(user.id)
-	},
-
-	async logout(sessionId: string): Promise<void> {
-		await RedisService.del(sessionId)
-	},
-
-	async validateSession(sessionId: string): Promise<User> {
-		const session = await RedisService.getJSON<SessionData>(sessionId)
-		if (!session || !session.userId)
-			throw new Error('Invalid or expired session')
-
-		const user = await prisma.user.findUniqueOrThrow({
-			where: { id: session.userId },
-		})
-		return user
-	},
+	return user
 }
 
-// Вспомогательные функции
-async function createSession(userId: string): Promise<AuthResult> {
-	const sessionId = randomUUID()
+export const loginUser = async (email: string, password: string) => {
+	const user = await prisma.user.findUnique({ where: { email } })
+	if (!user) throw new Error('User not found')
 
-	await RedisService.setJSON(sessionId, { userId }, SESSION_CONFIG.ttl)
+	const isValid = await comparePassword(password, user.password)
+	if (!isValid) throw new Error('Invalid credentials')
 
-	return {
-		user: await prisma.user.findUniqueOrThrow({ where: { id: userId } }),
-	}
+	return user
+}
+
+export const logoutUser = async (sessionId: string) => {
+	await redisService.del(`sessions:${sessionId}`)
+}
+
+export const validateSession = async (sessionId: string) => {
+	const session = await redisService.getJSON<{ userId: string }>(
+		`sessions:${sessionId}`
+	)
+	if (!session?.userId) throw new Error('Invalid session')
+
+	return prisma.user.findUniqueOrThrow({ where: { id: session.userId } })
 }

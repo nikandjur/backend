@@ -1,39 +1,30 @@
-import { NextFunction, Request, Response } from 'express'
-import { RedisService } from '../../redis/redis.service'
+import { Request, Response, NextFunction } from 'express'
+import { redisService } from '../../redis/redis.service.js'
 
-/**
- * Мидлвар для аутентификации через сессии
- */
 export const authenticate = async (
 	req: Request,
 	res: Response,
 	next: NextFunction
 ): Promise<void> => {
+	const sessionId = req.cookies?.sessionId
+	if (!sessionId) {
+		 res.status(401).json({ error: 'Session required' })
+		 return
+	}
+
 	try {
-		// Извлекаем sessionId из cookies
-		const sessionId = req.cookies?.sessionId
-
-		if (!sessionId) {
-			 res.status(401).json({ error: 'No session cookie' })
-			 return
+		const session = await redisService.getJSON<{ userId: string }>(
+			`sessions:${sessionId}`
+		)
+		if (!session?.userId) {
+			res.status(401).json({ error: 'Invalid session' })
+			return 
 		}
 
-		// Получаем сессию из Redis
-		const session = await RedisService.getJSON<{ userId: string }>(sessionId)
-
-		if (!session) {
-			 res.status(401).json({ error: 'Invalid session' })
-			 return
-		}
-
-		// Присваиваем userId в объект запроса
-		req.user = { id: session.userId }
-
-		// Переходим к следующему мидлвару или обработчику
+		req.user = { id: session.userId, email: '' }
 		next()
 	} catch (error) {
-		console.error('❌ Error during authentication:', error)
-		 res.status(500).json({ error: 'Internal server error' })
-		 return
+		console.error('Auth error:', error)
+		res.status(500).json({ error: 'Internal server error' })
 	}
 }

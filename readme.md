@@ -17,7 +17,7 @@ chmod +x entrypoint.sh
 
 Запуск проекта
 Вариант 1: Полностью Docker
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+docker-compose -f docker-compose.dev.yml up
 
 
 Вариант 2: Гибридный режим (рекомендуется)
@@ -68,18 +68,12 @@ npm run dev
 cd ../frontend
 npm run dev
 
-Перезапуск сервисов
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up postgres redis
-npm run dev
 
 Администрирование
 # Пересоздание node_modules
 rm -rf node_modules && npm install
 
 # Production-сборка
-npm run build
-Конфигурация
 Основные файлы окружения:
 
 .env.dev - для разработки
@@ -111,4 +105,17 @@ lsof -i :6379 # для Redis
 Убедитесь что сервис запущен:
 
 docker-compose ps
-Лицензия
+**********
+# Выполните команду, чтобы получить список запущенных контейнеров:
+docker ps
+# Подключитесь к контейнеру
+docker exec -it <container_name_or_id> redis-cli
+docker exec -it backend-redis-1 redis-cli
+# или через
+docker-compose exec redis redis-cli
+
+# Просмотр всех сессий
+KEYS *sessions*
+# Просмотр данных конкретной сессии :
+GET sessions:648f1cc8-c5e1-4d8e-b5dd-6efc1afee029
+

@@ -1,28 +1,24 @@
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
-import { setupSwagger } from './docs/swagger.js'
 import express from 'express'
 import helmet from 'helmet'
-import { errorHandler } from './middleware/error-handler.js'
-import { redisSession } from './middleware/redis-session.js'
+import { authenticate, sessionMiddleware } from './core/auth/middleware.js'
+import { httpLogger, logger } from './core/services/logger.js'
+import { handleError } from './core/utils/errorHandler.js'
+import { setupSwagger } from './docs/swagger.js'
 import { authRouter } from './modules/auth/index.js'
 import userRouter from './modules/user/user.route.js'
-import { initMinio } from './modules/storage/storage.service.js'
+import { initMinio } from './core/services/storage/service.js'
 
 // Обработка необработанных Promise-отклонений
 process.on('unhandledRejection', (reason: unknown) => {
-	console.error('⚠️ Unhandled Rejection at:', reason)
-	// Здесь можно добавить отправку ошибки в Sentry/Logging сервис
+	logger.error('Unhandled Rejection:', reason)
 })
 
 // Инициализация MinIO
-initMinio()
-	.then(() => {
-		console.log('✅ Storage service ready')
-	})
-	.catch(error => {
-		console.error('⚠️ Storage service initialization warning:', error.message)
-	})
+initMinio().catch(error => {
+	logger.error('MinIO init error', { error })
+})
 
 const app = express()
 
@@ -34,34 +30,32 @@ app.use(
 	})
 )
 app.use(helmet())
-app.use(express.json({ limit: '10kb' })) // Лимит размера JSON
+app.use(express.json({ limit: '10kb', strict: true }))
 
-// Логирование входящих запросов (только для разработки)
-if (process.env.NODE_ENV === 'development') {
-	app.use((req, _, next) => {
-		console.log('➡️ Incoming request:', req.method, req.path)
-		next()
-	})
-}
-
+// Логирование входящих запросов
+app.use(httpLogger)
 app.use(cookieParser())
 
-// Redis-сессии
-app.use(redisSession())
 
 // Swagger документация
-setupSwagger(app)
 
 // API роуты
+app.use(sessionMiddleware) // Для всех роутов
+setupSwagger(app)
+app.use('/api/protected', authenticate) // Только для защищённых роутов
 app.use('/api/auth', authRouter)
 app.use('/api/user', userRouter)
 
-// Health check endpoint
-app.get('/health', (_, res) => {
-	res.status(200).json({ status: 'ok' })
-})
-
-// Обработка ошибок
-app.use(errorHandler)
+// Обработка ошибок (новая версия)
+app.use(
+	(
+		err: unknown,
+		req: express.Request,
+		res: express.Response,
+		_next: express.NextFunction
+	) => {
+		handleError(res, err)
+	}
+)
 
 export default app

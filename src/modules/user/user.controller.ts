@@ -1,48 +1,36 @@
-import { prisma } from '../../db.js'
-import { generatePresignedUrl, getFileUrl } from '../storage/storage.service.js'
-import { z } from 'zod'
+import { Request, Response } from 'express'
+import { handleError } from '../../core/utils/errorHandler.js'
+// import { verifyEmail } from '../user/service.js'
+import {
+	confirmUserAvatar,
+	generateUserAvatarUploadUrl,
+	verifyEmailUser,
+} from './user.service.js'
 
-const UploadSchema = z.object({
-	userId: z.string().cuid(),
-	objectName: z.string().min(1),
-})
-
-export const generateAvatarUploadUrl = async (userId: string) => {
-	const validation = z.string().cuid().safeParse(userId)
-	if (!validation.success) {
-		throw new Error('Invalid user ID')
-	}
-
-	const objectName = `avatars/${userId}-${Date.now()}`
-	const uploadUrl = await generatePresignedUrl(objectName)
-
-	return {
-		uploadUrl,
-		objectName,
-		method: 'PUT',
-		expiresIn: '1 hour',
+export const verifyEmailHandler = async (req: Request, res: Response) => {
+	try {
+		const { token } = req.query // Получаем token из query параметров
+		const user = await verifyEmailUser(token as string) // Передаем строку
+		res.json({ user })
+	} catch (err) {
+		handleError(res, err)
 	}
 }
 
-export const confirmAvatarUpload = async (
-	userId: string,
-	objectName: string
-) => {
-	const validation = UploadSchema.safeParse({ userId, objectName })
-	if (!validation.success) {
-		throw new Error('Invalid input data')
+export const generateAvatarUrl = async (req: Request, res: Response) => {
+	try {
+		const data = await generateUserAvatarUploadUrl(req.user!.id)
+		res.json(data)
+	} catch (err) {
+		handleError(res, err)
 	}
+}
 
-	const avatarUrl = getFileUrl(validation.data.objectName)
-
-	return await prisma.user.update({
-		where: { id: validation.data.userId },
-		data: { avatarUrl },
-		select: {
-			id: true,
-			email: true,
-			name: true,
-			avatarUrl: true,
-		},
-	})
+export const confirmAvatar = async (req: Request, res: Response) => {
+	try {
+		const user = await confirmUserAvatar(req.user!.id, req.body.objectName)
+		res.json(user)
+	} catch (err) {
+		handleError(res, err)
+	}
 }

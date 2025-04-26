@@ -1,53 +1,48 @@
+import { completeEmailVerification } from '../../core/auth/email-verification.js'
+import { comparePassword, hashPassword } from '../../core/auth/password.js'
+import { createSession, deleteSession } from '../../core/auth/session.js'
+import { sendVerificationEmail } from '../../core/services/email.js'
 import { prisma } from '../../db.js'
-import { redisService } from '../../redis/redis.service.js'
-import { hashPassword, comparePassword } from './auth.utils'
 
-const SESSION_TTL = 60 * 60 * 24 * 7 // 7 дней
-
-export const createUserSession = async (userId: string) => {
-	const sessionId = crypto.randomUUID()
-	await redisService.setJSON(`sessions:${sessionId}`, { userId }, SESSION_TTL)
-	return sessionId
-}
+export const verifyEmailAuth = completeEmailVerification
 
 export const registerUser = async (
 	email: string,
 	password: string,
 	name: string
 ) => {
-	const existing = await prisma.user.findUnique({ where: { email } })
-	if (existing) throw new Error('User already exists')
+	// Проверяем существование пользователя
+	const existingUser = await prisma.user.findUnique({
+		where: { email },
+		select: { id: true },
+	})
+
+	if (existingUser) {
+		throw new Error('USER_ALREADY_EXISTS')
+	}
 
 	const user = await prisma.user.create({
 		data: {
 			email,
 			password: await hashPassword(password),
 			name,
+			emailVerified: null,
 		},
 	})
 
+	await sendVerificationEmail(user.id, user.email)
 	return user
 }
 
 export const loginUser = async (email: string, password: string) => {
 	const user = await prisma.user.findUnique({ where: { email } })
-	if (!user) throw new Error('User not found')
-
-	const isValid = await comparePassword(password, user.password)
-	if (!isValid) throw new Error('Invalid credentials')
-
-	return user
+	if (!user || !(await comparePassword(password, user.password))) {
+		throw new Error('Invalid credentials')
+	}
+	const sessionId = await createSession(user.id)
+	return { user, sessionId } // Возвращаем sessionId для контроллера
 }
 
 export const logoutUser = async (sessionId: string) => {
-	await redisService.del(`sessions:${sessionId}`)
-}
-
-export const validateSession = async (sessionId: string) => {
-	const session = await redisService.getJSON<{ userId: string }>(
-		`sessions:${sessionId}`
-	)
-	if (!session?.userId) throw new Error('Invalid session')
-
-	return prisma.user.findUniqueOrThrow({ where: { id: session.userId } })
+	await deleteSession(sessionId)
 }

@@ -1,11 +1,11 @@
 import { Router } from 'express'
-import { validate } from '../../middleware/validation.js'
+import { authenticate, sessionMiddleware } from '../../core/auth/middleware.js'
+import { validate } from '../../core/utils/validation.js'
 import { getCurrentUser, login, logout, register } from './auth.controller.js'
-import { authenticate } from './auth.middleware.js'
 import { loginSchema, registerSchema } from './auth.schema.js'
 
 const router = Router()
-
+router.use(sessionMiddleware)
 /**
  * @swagger
  * tags:
@@ -84,7 +84,7 @@ router.post('/login', validate(loginSchema), login)
  *       401:
  *         description: Недействительный sessionId
  */
-router.post('/logout', logout)
+router.post('/logout', authenticate, logout)
 
 /**
  * @swagger
@@ -117,5 +117,6 @@ router.post('/logout', logout)
  *         description: Неавторизован
  */
 router.get('/me', authenticate, getCurrentUser)
+
 
 export default router

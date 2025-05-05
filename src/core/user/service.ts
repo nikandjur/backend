@@ -1,0 +1,132 @@
+// src/core/user/user.service.ts
+import { prisma } from '../../db.js'
+import {
+	generateVerificationToken,
+	verifyEmailToken,
+} from '../auth/email-verification.js'
+import { comparePassword, hashPassword } from '../auth/password.js'
+import { sessionService } from '../auth/session.js'
+import { sendVerificationEmail } from '../services/email.js'
+import { UserProfile } from './types.js'
+
+type UserUpdateData = {
+	avatarUrl: string
+}
+
+export const userService = {
+	// Регистрация
+	async register(email: string, password: string, name: string) {
+		const existingUser = await prisma.user.findUnique({ where: { email } })
+		if (existingUser) throw new Error('USER_ALREADY_EXISTS')
+
+		const user = await prisma.user.create({
+			data: {
+				email,
+				password: await hashPassword(password),
+				name,
+				emailVerified: null,
+			},
+		})
+
+		const token = await generateVerificationToken(user.id)
+		await sendVerificationEmail(user.email, token)
+		return user
+	},
+
+	// Аутентификация
+	async login(email: string, password: string) {
+		const user = await this.validateCredentials(email, password)
+		if (!user.emailVerified) throw new Error('Email not verified')
+
+		const sessionId = await sessionService.create(user.id)
+		return { user: { id: user.id }, sessionId }
+	},
+
+	// Валидация учётных данных
+	async validateCredentials(email: string, password: string) {
+		const user = await prisma.user.findUnique({
+			where: { email },
+			select: { id: true, password: true, emailVerified: true },
+		})
+
+		if (!user || !(await comparePassword(password, user.password))) {
+			throw new Error('Invalid credentials')
+		}
+		return user
+	},
+
+	// Подтверждение email
+	async verifyEmail(token: string) {
+		const userId = await verifyEmailToken(token)
+		const user = await prisma.user.update({
+			where: { id: userId },
+			data: { emailVerified: new Date() },
+			select: { id: true, email: true },
+		})
+
+		const sessionId = await sessionService.create(user.id)
+		return { user, sessionId }
+	},
+
+	// Повторная отправка подтверждения
+	async resendVerification(userId: string, email: string) {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { emailVerified: true },
+		})
+
+		if (user?.emailVerified) throw new Error('Email already verified')
+		const token = await generateVerificationToken(userId)
+		await sendVerificationEmail(email, token)
+	},
+	async getUserProfile(userId: string): Promise<UserProfile> {
+		return prisma.user.findUniqueOrThrow({
+			where: { id: userId },
+			select: {
+				id: true,
+				name: true,
+				email: true,
+				avatarUrl: true,
+				bio: true,
+				website: true,
+				emailVerified: true,
+				_count: { select: { posts: true } },
+			},
+		})
+	},
+	// Общая функция обновления с типизацией
+	async updateUser(
+		userId: string,
+		data: { avatarUrl: string } | { bio: string } | { website: string } // Объединяем все возможные обновления
+	): Promise<UserProfile> {
+		return prisma.user.update({
+			where: { id: userId },
+			data,
+			select: {
+				id: true,
+				email: true,
+				name: true,
+				avatarUrl: true,
+				bio: true,
+				website: true,
+				emailVerified: true,
+			},
+		})
+	},
+
+	async getUserPosts(userId: string, page: number = 1, limit: number = 10) {
+		return prisma.post.findMany({
+			where: { authorId: userId },
+			skip: (page - 1) * limit,
+			take: limit,
+			orderBy: { createdAt: 'desc' },
+			select: {
+				id: true,
+				title: true,
+				content: true,
+				createdAt: true,
+				updatedAt: true,
+			},
+		})
+	},
+}

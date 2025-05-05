@@ -1,10 +1,9 @@
+import { logger } from '../logger.js'
 import { minioClient, bucketName } from './client.js'
-import { logger } from '../../services/logger.js'
 
-export const initMinio = async () => {
+export const initStorage = async () => {
 	try {
 		const exists = await minioClient.bucketExists(bucketName)
-
 		if (!exists) {
 			await minioClient.makeBucket(bucketName, 'us-east-1')
 			logger.info(`Bucket ${bucketName} created`)
@@ -24,10 +23,8 @@ export const initMinio = async () => {
 				],
 			})
 		)
-
-		logger.info('MinIO initialized')
 	} catch (error) {
-		logger.error('MinIO init failed', { error })
+		logger.error('Storage init failed', { error })
 		throw error
 	}
 }
@@ -42,4 +39,24 @@ export const generatePresignedUrl = async (
 export const getObjectUrl = (objectName: string) => {
 	const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'
 	return `${protocol}://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${bucketName}/${objectName}`
+}
+
+export const generateAvatarUploadData = async (userId: string) => {
+	const objectName = `avatars/${userId}-${Date.now()}`
+	return {
+		uploadUrl: await generatePresignedUrl(objectName),
+		objectName,
+		accessUrl: getObjectUrl(objectName),
+		expiresIn: '1h',
+	}
+}
+
+export const validateAvatarObjectName = (
+	userId: string,
+	objectName: string
+) => {
+	if (!objectName.startsWith(`avatars/${userId}`)) {
+		throw new Error('Invalid avatar object name format')
+	}
+	return getObjectUrl(objectName)
 }

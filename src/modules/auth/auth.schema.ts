@@ -15,5 +15,9 @@ export const loginSchema = z.object({
 	password: z.string().min(1, 'Password required'),
 })
 
+export const emailVerificationSchema = z.object({
+	token: z.string().min(10, 'Invalid token format'),
+})
+
 export type RegisterDTO = z.infer<typeof registerSchema>
 export type LoginDTO = z.infer<typeof loginSchema>

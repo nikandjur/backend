@@ -1,32 +1,45 @@
 import nodemailer from 'nodemailer'
-import { logger } from './logger'
-import { generateVerificationToken } from '../auth/email-verification'
+import { logger } from './logger.js'
 
 const transporter = nodemailer.createTransport({
-	host: process.env.SMTP_HOST,
-	port: Number(process.env.SMTP_PORT),
-	secure: process.env.SMTP_SECURE === 'true',
-	auth: {
-		user: process.env.SMTP_USER,
-		pass: process.env.SMTP_PASSWORD,
-	},
+	host: process.env.SMTP_HOST || 'mailhog',
+	port: Number(process.env.SMTP_PORT || 1025),
+	secure: process.env.NODE_ENV === 'production',
+	...(process.env.NODE_ENV === 'production' && {
+		auth: {
+			user: process.env.SMTP_USER,
+			pass: process.env.SMTP_PASSWORD,
+		},
+	}),
 })
 
-export const sendVerificationEmail = async (userId: string, email: string) => {
-	try {
-		const token = generateVerificationToken(userId)
-		const verificationUrl = `${process.env.APP_URL}/verify-email?token=${token}`
+export const sendVerificationEmail = async (email: string, token: string) => {
+	const verificationUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${token}`
 
-		await transporter.sendMail({
-			from: `"My App" <${process.env.EMAIL_FROM}>`,
+	try {
+		const info = await transporter.sendMail({
+			from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM}>`,
 			to: email,
-			subject: 'Verify your email',
-			html: `Click <a href="${verificationUrl}">here</a> to verify your email.`,
+			subject: 'Подтверждение email',
+			html: `
+        <h2>Подтвердите ваш email</h2>
+        <p>Для завершения регистрации перейдите по ссылке:</p>
+        <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+        <p>Ссылка действительна 24 часа.</p>
+        ${
+					process.env.NODE_ENV !== 'production'
+						? '<p><strong>Это тестовое письмо (development mode)</strong></p>'
+						: ''
+				}
+      `,
 		})
 
-		logger.info('Verification email sent', { userId, email })
+		logger.info('Verification email sent', { email, messageId: info.messageId })
 	} catch (error) {
-		logger.error('Failed to send verification email', { error, userId, email })
-		throw new Error('EMAIL_SEND_FAILED')
+		logger.error('Failed to send verification email', {
+			email,
+			error: error instanceof Error ? error.message : String(error),
+		})
+		throw new Error('Failed to send verification email')
 	}
 }

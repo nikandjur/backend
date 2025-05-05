@@ -1,4 +1,4 @@
-import 'dotenv/config'
+
 import Redis from 'ioredis'
 
 // Проверка с подробным выводом

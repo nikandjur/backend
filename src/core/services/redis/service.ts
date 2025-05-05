@@ -1,31 +1,22 @@
+// src/core/services/redis/service.ts
 import redis from './client.js'
 
 export const redisService = {
-	// Сессии
-	setSession: (sessionId: string, userId: string, ttl: number) =>
-		redis.set(`sessions:${sessionId}`, userId, 'EX', ttl),
+	// Универсальные методы
+	set: (key: string, value: string, ttl?: number) =>
+		ttl ? redis.set(key, value, 'EX', ttl) : redis.set(key, value),
 
-	getSession: (sessionId: string) => redis.get(`sessions:${sessionId}`),
+	get: (key: string) => redis.get(key),
 
-	deleteSession: (sessionId: string) => redis.del(`sessions:${sessionId}`),
+	del: (key: string) => redis.del(key),
 
-	// Общие методы
-	setJSON: async (key: string, value: unknown, ttl?: number) => {
-		const data = JSON.stringify(value)
-		return ttl ? redis.set(key, data, 'EX', ttl) : redis.set(key, data)
-	},
+	// Специализированные методы (для удобства)
+	setVerificationToken: (token: string, userId: string, ttl: number) =>
+		redis.set(`email-verification:${token}`, userId, 'EX', ttl),
 
-	getJSON: async <T>(key: string): Promise<T | null> => {
-		const data = await redis.get(key)
-		return data ? JSON.parse(data) : null
-	},
+	getVerificationToken: (token: string) =>
+		redis.get(`email-verification:${token}`),
 
-	// Специальные методы
-	setWithExpire: async (
-		key: string,
-		value: string,
-		ttl: number
-	): Promise<'OK' | null> => {
-		return redis.set(key, value, 'EX', ttl)
-	},
+	deleteVerificationToken: (token: string) =>
+		redis.del(`email-verification:${token}`),
 }

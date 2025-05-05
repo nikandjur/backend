@@ -8,7 +8,7 @@ import { handleError } from './core/utils/errorHandler.js'
 import { setupSwagger } from './docs/swagger.js'
 import { authRouter } from './modules/auth/index.js'
 import userRouter from './modules/user/user.route.js'
-import { initMinio } from './core/services/storage/service.js'
+import { initStorage } from './core/services/storage/service.js'
 
 // Обработка необработанных Promise-отклонений
 process.on('unhandledRejection', (reason: unknown) => {
@@ -16,7 +16,7 @@ process.on('unhandledRejection', (reason: unknown) => {
 })
 
 // Инициализация MinIO
-initMinio().catch(error => {
+initStorage().catch(error => {
 	logger.error('MinIO init error', { error })
 })
 

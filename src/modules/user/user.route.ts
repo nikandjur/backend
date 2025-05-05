@@ -1,28 +1,36 @@
+// src/modules/user/user.route.ts
 import { Router } from 'express'
-import {
-	verifyEmailHandler, // Переименовываем обработчик
-	generateAvatarUrl,
-	confirmAvatar,
-} from './user.controller'
 import { authenticate } from '../../core/auth/middleware.js'
-import { avatarConfirmSchema, emailVerificationSchema } from './user.schema.js'
 import { validate } from '../../core/utils/validation.js'
+import {
+	getUserProfile,
+	updateUserProfile,
+	getUserPosts,
+
+} from './user.controller.js'
+import {
+	profileUpdateSchema,
+	userIdParamsSchema,
+	paginationSchema,
+} from './user.schema.js'
 
 const router = Router()
 
-router.get(
-	'/verify-email',
-	validate(emailVerificationSchema), // Теперь без второго параметра
-	verifyEmailHandler // Используем переименованный обработчик
+// Профиль пользователя
+router.get('/:userId', validate(userIdParamsSchema, 'params'), getUserProfile)
+router.put(
+  '/profile',
+  authenticate,
+  validate(profileUpdateSchema),
+  updateUserProfile
 )
 
-router.post('/avatar/upload-url', authenticate, generateAvatarUrl)
-
-router.post(
-	'/avatar/confirm',
-	authenticate,
-	validate(avatarConfirmSchema),
-	confirmAvatar
+// Контент
+router.get(
+	'/:userId/posts',
+	validate(userIdParamsSchema, 'params'),
+	validate(paginationSchema, 'query'),
+	getUserPosts
 )
 
 export default router

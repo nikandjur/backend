@@ -1,10 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
-import { validateSession } from './session.js'
-import { logger } from '../services/logger.js'
 import { prisma } from '../../db.js'
-import { handleError } from '../utils/errorHandler'
+import { logger } from '../services/logger.js'
+import { sessionService } from './session.js'
 
-// Для публичных роутов (добавляет user если есть)
 export const sessionMiddleware = async (
 	req: Request,
 	res: Response,
@@ -14,15 +12,15 @@ export const sessionMiddleware = async (
 	if (!sessionId) return next()
 
 	try {
-		const session = await validateSession(sessionId)
-		if (!session?.userId) {
-			logger.warn('Invalid session attempt', { sessionId })
+		const session = await sessionService.validate(sessionId)
+		if (!session) {
+			res.clearCookie('sessionId')
 			return next()
 		}
 
 		const user = await prisma.user.findUnique({
 			where: { id: session.userId },
-			select: { id: true, email: true, name: true },
+			select: { id: true, email: true, name: true, emailVerified: true },
 		})
 
 		if (user) req.user = user
@@ -33,35 +31,14 @@ export const sessionMiddleware = async (
 	}
 }
 
-// Для защищённых роутов (требует авторизации)
-export const authenticate = async (
+export const authenticate = (
 	req: Request,
 	res: Response,
 	next: NextFunction
-) => {
+): void => {
 	if (!req.user) {
-		return handleError(res, 'Authentication required', 401)
+		res.status(401).json({ error: 'Authentication required' })
+		return // Явный return без значения
 	}
-	next()
-}
-// Проверка верификации email
-export const checkEmailVerified = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => {
-	if (!req.user) {
-		return handleError(res, 'Authentication required', 401)
-	}
-
-	const user = await prisma.user.findUnique({
-		where: { id: req.user.id },
-		select: { emailVerified: true },
-	})
-
-	if (!user?.emailVerified) {
-		return handleError(res, 'Email verification required', 403)
-	}
-
 	next()
 }

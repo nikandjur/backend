@@ -1,17 +1,25 @@
 import { z } from 'zod'
 
-export const emailVerificationSchema = z.object({
-	token: z.string().min(10, 'Invalid token format'),
-})
-
-export const avatarConfirmSchema = z.object({
-	objectName: z
-		.string()
-		.min(1, 'Object name is required')
-		.startsWith('avatars/', "Must start with 'avatars/'"),
-})
-
-export const UploadSchema = z.object({
+// Параметры пути
+export const userIdParamsSchema = z.object({
 	userId: z.string().cuid(),
-	objectName: z.string().min(1),
+})
+
+// Query параметры
+export const userIdQuerySchema = z
+	.object({
+		userId: z.string().cuid(),
+	})
+	.optional()
+
+// Тело запроса
+export const profileUpdateSchema = z.object({
+	name: z.string().min(2).max(50).optional(),
+	bio: z.string().max(500).optional(),
+	website: z.string().url().optional(),
+})
+
+export const paginationSchema = z.object({
+	page: z.coerce.number().int().positive().default(1),
+	limit: z.coerce.number().int().positive().max(100).default(10),
 })

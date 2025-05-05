@@ -1,10 +1,23 @@
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
 import { authenticate, sessionMiddleware } from '../../core/auth/middleware.js'
 import { validate } from '../../core/utils/validation.js'
-import { getCurrentUser, login, logout, register } from './auth.controller.js'
+import { 
+  getCurrentUser,
+  login,
+  logout,
+  register,
+  resendVerificationHandler,
+  verifyEmailHandler,
+} from './auth.controller.js';
 import { loginSchema, registerSchema } from './auth.schema.js'
 
 const router = Router()
+const verificationLimiter = rateLimit({
+	windowMs: 60 * 60 * 1000, // 1 hour
+	max: 5,
+	message: 'Too many verification requests, please try again later',
+})
 router.use(sessionMiddleware)
 /**
  * @swagger
@@ -117,6 +130,67 @@ router.post('/logout', authenticate, logout)
  *         description: Неавторизован
  */
 router.get('/me', authenticate, getCurrentUser)
+
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   get:
+ *     summary: Подтверждение email
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Токен подтверждения email
+ *     responses:
+ *       200:
+ *         description: Email успешно подтвержден
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Неверный или просроченный токен
+ */
+router.get('/verify-email', verifyEmailHandler)
+
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Повторная отправка письма подтверждения
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Письмо отправлено
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Verification email sent
+ *       401:
+ *         description: Не авторизован
+ *       403:
+ *         description: Email уже подтвержден
+ *       429:
+ *         description: Слишком много запросов (лимит 5 в час)
+ */
+router.post(
+	'/resend-verification',
+	authenticate,
+	verificationLimiter,
+	resendVerificationHandler
+)
 
 
 export default router

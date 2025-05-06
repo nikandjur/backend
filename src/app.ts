@@ -11,6 +11,7 @@ import userRouter from './modules/user/user.route.js'
 import storageRouter from './modules/storage/storage.route.js'
 import { initStorage } from './core/services/storage/service.js'
 import { initRoles } from './core/roles/init.js'
+import { serverAdapter } from './modules/monitoring/bull-board.js'
 
 // Обработка необработанных Promise-отклонений
 process.on('unhandledRejection', (reason: unknown) => {
@@ -41,6 +42,7 @@ app.use(httpLogger)
 app.use(cookieParser())
 
 // API роуты
+app.use('/admin/queues', serverAdapter.getRouter())
 app.use(sessionMiddleware) // Для всех роутов
 setupSwagger(app)
 app.use('/api/protected', authenticate) // Только для защищённых роутов

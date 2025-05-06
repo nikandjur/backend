@@ -5,10 +5,9 @@ export const redisService = {
 	// Универсальные методы
 	set: (key: string, value: string, ttl?: number) =>
 		ttl ? redis.set(key, value, 'EX', ttl) : redis.set(key, value),
-
 	get: (key: string) => redis.get(key),
-
 	del: (key: string) => redis.del(key),
+	keys: (pattern: string) => redis.keys(pattern),
 
 	// Специализированные методы (для удобства)
 	setVerificationToken: (token: string, userId: string, ttl: number) =>

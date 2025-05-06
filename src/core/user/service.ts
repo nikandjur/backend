@@ -19,12 +19,21 @@ export const userService = {
 		const existingUser = await prisma.user.findUnique({ where: { email } })
 		if (existingUser) throw new Error('USER_ALREADY_EXISTS')
 
+		// Находим роль USER (она должна быть создана в initRoles)
+		const userRole = await prisma.role.findUnique({
+			where: { name: 'USER' },
+			select: { id: true },
+		})
+
+		if (!userRole) throw new Error('DEFAULT_ROLE_NOT_FOUND')
+
 		const user = await prisma.user.create({
 			data: {
 				email,
 				password: await hashPassword(password),
 				name,
 				emailVerified: null,
+				role: { connect: { id: userRole.id } }, // Связываем с ролью
 			},
 		})
 
@@ -34,11 +43,24 @@ export const userService = {
 	},
 
 	// Аутентификация
-	async login(email: string, password: string) {
+	async login(email: string, password: string, ip?: string) {
+		// Добавляем параметр ip
 		const user = await this.validateCredentials(email, password)
 		if (!user.emailVerified) throw new Error('Email not verified')
 
-		const sessionId = await sessionService.create(user.id)
+		const userWithRole = await prisma.user.findUnique({
+			where: { id: user.id },
+			select: { id: true, role: true },
+		})
+
+		if (!userWithRole?.role) throw new Error('User role not found')
+
+		const sessionId = await sessionService.create(
+			user.id,
+			userWithRole.role.name,
+			ip // Используем переданный IP
+		)
+
 		return { user: { id: user.id }, sessionId }
 	},
 
@@ -56,15 +78,20 @@ export const userService = {
 	},
 
 	// Подтверждение email
-	async verifyEmail(token: string) {
+	async verifyEmail(token: string, ip?: string) {
+		// Добавляем параметр ip
 		const userId = await verifyEmailToken(token)
+
 		const user = await prisma.user.update({
 			where: { id: userId },
 			data: { emailVerified: new Date() },
-			select: { id: true, email: true },
+			select: { id: true, email: true, role: true }, // Добавляем role в выборку
 		})
 
-		const sessionId = await sessionService.create(user.id)
+		if (!user.role) throw new Error('User role not found')
+
+		const sessionId = await sessionService.create(user.id, user.role.name, ip)
+
 		return { user, sessionId }
 	},
 

@@ -6,3 +6,6 @@
 // 	checkEmailVerified, // Только для верифицированных пользователей
 // 	createPost
 // )
+
+
+// router.post('/admin/action', authenticate, checkRole('ADMIN'), adminAction)

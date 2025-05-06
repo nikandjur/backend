@@ -9,3 +9,4 @@ export const minioClient = new Client({
 })
 
 export const bucketName = process.env.MINIO_BUCKET_NAME!
+

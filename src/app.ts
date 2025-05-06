@@ -6,9 +6,11 @@ import { authenticate, sessionMiddleware } from './core/auth/middleware.js'
 import { httpLogger, logger } from './core/services/logger.js'
 import { handleError } from './core/utils/errorHandler.js'
 import { setupSwagger } from './docs/swagger.js'
-import { authRouter } from './modules/auth/index.js'
+import  authRouter  from './modules/auth/auth.route.js'
 import userRouter from './modules/user/user.route.js'
+import storageRouter from './modules/storage/storage.route.js'
 import { initStorage } from './core/services/storage/service.js'
+import { initRoles } from './core/roles/init.js'
 
 // Обработка необработанных Promise-отклонений
 process.on('unhandledRejection', (reason: unknown) => {
@@ -19,6 +21,8 @@ process.on('unhandledRejection', (reason: unknown) => {
 initStorage().catch(error => {
 	logger.error('MinIO init error', { error })
 })
+
+initRoles()
 
 const app = express()
 
@@ -36,15 +40,13 @@ app.use(express.json({ limit: '10kb', strict: true }))
 app.use(httpLogger)
 app.use(cookieParser())
 
-
-// Swagger документация
-
 // API роуты
 app.use(sessionMiddleware) // Для всех роутов
 setupSwagger(app)
 app.use('/api/protected', authenticate) // Только для защищённых роутов
 app.use('/api/auth', authRouter)
 app.use('/api/user', userRouter)
+app.use('/api', storageRouter) 
 
 // Обработка ошибок (новая версия)
 app.use(

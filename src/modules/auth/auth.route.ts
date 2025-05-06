@@ -14,10 +14,10 @@ import { loginSchema, registerSchema } from './auth.schema.js'
 
 const router = Router()
 const verificationLimiter = rateLimit({
-	windowMs: 60 * 60 * 1000, // 1 hour
-	max: 5,
-	message: 'Too many verification requests, please try again later',
-})
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 5,
+  message: 'Too many login attempts, please try later',
+});
 router.use(sessionMiddleware)
 /**
  * @swagger
@@ -83,7 +83,7 @@ router.post('/register', validate(registerSchema), register)
  *       400:
  *         description: Неверные данные
  */
-router.post('/login', validate(loginSchema), login)
+router.post('/login', verificationLimiter, validate(loginSchema), login)
 
 /**
  * @swagger

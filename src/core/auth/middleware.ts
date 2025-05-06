@@ -23,7 +23,13 @@ export const sessionMiddleware = async (
 			select: { id: true, email: true, name: true, emailVerified: true },
 		})
 
-		if (user) req.user = user
+		if (user) {
+			req.user = {
+				...user,
+				role: session.role, // Добавляем роль из сессии
+			}
+		}
+
 		next()
 	} catch (error) {
 		logger.error('Session validation failed', { error })
@@ -42,3 +48,12 @@ export const authenticate = (
 	}
 	next()
 }
+
+export const checkRole =
+	(role: string) => (req: Request, res: Response, next: NextFunction) => {
+		if (!req.user?.role || req.user.role !== role) {
+			 res.status(403).json({ error: 'Forbidden' })
+			 return
+		}
+		next()
+	}

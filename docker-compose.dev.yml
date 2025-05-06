@@ -1,3 +1,4 @@
+
 services:
   postgres:
     image: postgres:15
@@ -22,6 +23,19 @@ services:
       timeout: 5s
       retries: 5
 
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - '8001:5540'               # Проброс порта 5540 из контейнера на 8001 хоста
+    volumes:
+      - redisinsight_data:/db    # Для сохранения данных RedisInsight
+    environment:
+      - REDISINSIGHT_HOST=0.0.0.0 # Чтобы слушал на всех интерфейсах
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
@@ -43,7 +57,6 @@ services:
       - '1025:1025' # SMTP порт
       - '8025:8025' # Web интерфейс
     restart: unless-stopped
-    # Добавьте явное указание драйвера
     networks:
       default:
         aliases:
@@ -52,3 +65,4 @@ services:
 volumes:
   pgdata:
   minio_data:
+  redisinsight_data:

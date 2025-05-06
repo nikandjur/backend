@@ -47,7 +47,6 @@ export const generateAvatarUploadData = async (userId: string) => {
 		uploadUrl: await generatePresignedUrl(objectName),
 		objectName,
 		accessUrl: getObjectUrl(objectName),
-		expiresIn: '1h',
 	}
 }
 
@@ -56,7 +55,7 @@ export const validateAvatarObjectName = (
 	objectName: string
 ) => {
 	if (!objectName.startsWith(`avatars/${userId}`)) {
-		throw new Error('Invalid avatar object name format')
+		throw new Error('Invalid avatar object name')
 	}
 	return getObjectUrl(objectName)
 }

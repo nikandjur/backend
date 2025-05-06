@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { handleError } from '../../core/utils/errorHandler.js'
+import { avatarQueue } from './avatar.queue'
 import {
 	generatePresignedUrl,
 	getObjectUrl,
@@ -32,12 +33,20 @@ export const handleGenerateAvatarUrl = async (req: Request, res: Response) => {
 	}
 }
 
+
 export const handleConfirmAvatar = async (req: Request, res: Response) => {
 	try {
 		const avatarUrl = validateAvatarObjectName(
 			req.user!.id,
 			req.body.objectName
 		)
+
+		// Добавляем задачу в очередь
+		await avatarQueue.add('optimize-avatar', {
+			userId: req.user!.id,
+			originalPath: req.body.objectName,
+		})
+
 		res.json({ avatarUrl })
 	} catch (err) {
 		handleError(res, err)

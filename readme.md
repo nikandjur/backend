@@ -119,3 +119,7 @@ KEYS *sessions*
 # Просмотр данных конкретной сессии :
 GET sessions:648f1cc8-c5e1-4d8e-b5dd-6efc1afee029
 
+
+
+docker stop redisinsight
+docker rm redisinsight

@@ -21,7 +21,8 @@ export const login = async (req: Request, res: Response) => {
 	try {
 		const { user, sessionId } = await userService.login(
 			req.body.email,
-			req.body.password
+			req.body.password,
+			req.ip // Передаём IP из запроса
 		)
 
 		res
@@ -59,7 +60,10 @@ export const verifyEmailHandler = async (req: Request, res: Response) => {
 			return
 		}
 
-		const { user, sessionId } = await userService.verifyEmail(token)
+		const { user, sessionId } = await userService.verifyEmail(
+			token,
+			req.ip // Передаём IP
+		)
 
 		res
 			.cookie('sessionId', sessionId, {

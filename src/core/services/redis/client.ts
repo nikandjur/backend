@@ -1,4 +1,3 @@
-
 import Redis from 'ioredis'
 
 // Проверка с подробным выводом
@@ -9,14 +8,16 @@ console.log('ENV Variables:', {
 
 if (!process.env.REDIS_URL) {
 	console.error('❌ REDIS_URL is not defined in environment variables')
-	process.exit(1) // Завершаем процесс с ошибкой
+	process.exit(1)
 }
 
-// Настройки Redis
+// Настройки Redis с учетом требований BullMQ
 const redisOptions = {
-	connectTimeout: 5000, // Таймаут подключения в миллисекундах
+	connectTimeout: 5000,
+	maxRetriesPerRequest: null, // Важно! Требование BullMQ
+	enableReadyCheck: false, // Важно! Требование BullMQ
 	retryStrategy: (times: number) => {
-		const delay = Math.min(times * 50, 2000) // Задержка увеличивается до 2 секунд
+		const delay = Math.min(times * 50, 2000)
 		console.warn(`Retrying connection after ${delay}ms (${times} attempt(s))`)
 		return delay
 	},

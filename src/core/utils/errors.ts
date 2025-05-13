@@ -1,18 +1,39 @@
-type AppError = Error & { status: number; details?: any }
+import { AppError } from '../types/error'
+
+type ErrorOptions = Pick<
+	AppError,
+	'code' | 'details' | 'isOperational' | 'expose'
+>
 
 export const createError = (
-	status: number,
+	statusCode: number,
 	message: string,
-	details?: any
+	options?: ErrorOptions
 ): AppError => {
 	const error = new Error(message) as AppError
-	error.status = status
+	error.statusCode = statusCode
+	error.code = options?.code || 'INTERNAL_ERROR'
+	error.isOperational = options?.isOperational ?? true
+	error.expose = options?.expose ?? statusCode < 500
+
+	if (options?.details) {
+		error.details = options.details
+	}
+
 	return error
 }
 
 export const ERRORS = {
-	badRequest: (msg = 'Bad request') => createError(400, msg),
-	unauthorized: (msg = 'Unauthorized') => createError(401, msg),
-	notFound: (msg = 'Not found') => createError(404, msg),
-	internal: (msg = 'Internal error') => createError(500, msg),
+	badRequest: (message = 'Bad request', details?: Record<string, unknown>) =>
+		createError(400, message, { code: 'BAD_REQUEST', details }),
+	unauthorized: (message = 'Unauthorized') =>
+		createError(401, message, { code: 'UNAUTHORIZED' }),
+	forbidden: (message = 'Forbidden') =>
+		createError(403, message, { code: 'FORBIDDEN' }),
+	notFound: (message = 'Not found') =>
+		createError(404, message, { code: 'NOT_FOUND' }),
+	conflict: (message = 'Conflict') =>
+		createError(409, message, { code: 'CONFLICT' }),
+	internal: (message = 'Internal error') =>
+		createError(500, message, { code: 'INTERNAL_ERROR', isOperational: false }),
 }

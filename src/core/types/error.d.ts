@@ -1,7 +1,8 @@
 // src/types/error.d.ts
-interface AppError extends Error {
+export interface AppError extends Error {
 	statusCode: number
 	code: string
-	details?: unknown
+	details?: Record<string, unknown> // Добавляем details для передачи дополнительных данных
 	isOperational?: boolean
+	expose?: boolean // Добавляем для контроля вывода ошибок
 }

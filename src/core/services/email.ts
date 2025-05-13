@@ -22,21 +22,28 @@ export const sendVerificationEmail = async (email: string, token: string) => {
 			to: email,
 			subject: 'Подтверждение email',
 			html: `
-        <h2>Подтвердите ваш email</h2>
-        <p>Для завершения регистрации перейдите по ссылке:</p>
-        <p><a href="${verificationUrl}">${verificationUrl}</a></p>
-        <p>Ссылка действительна 24 часа.</p>
-        ${
+				<h2>Подтвердите ваш email</h2>
+				<p>Для завершения регистрации перейдите по ссылке:</p>
+				<p><a href="${verificationUrl}">${verificationUrl}</a></p>
+				<p>Ссылка действительна 24 часа.</p>
+				${
 					process.env.NODE_ENV !== 'production'
 						? '<p><strong>Это тестовое письмо (development mode)</strong></p>'
 						: ''
 				}
-      `,
+			`,
 		})
 
-		logger.info('Verification email sent', { email, messageId: info.messageId })
+		if (process.env.NODE_ENV !== 'test') {
+			logger.info({
+				msg: 'Verification email sent',
+				email,
+				messageId: info.messageId,
+			})
+		}
 	} catch (error) {
-		logger.error('Failed to send verification email', {
+		logger.error({
+			msg: 'Failed to send verification email',
 			email,
 			error: error instanceof Error ? error.message : String(error),
 		})

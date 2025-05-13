@@ -1,26 +1,37 @@
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { userService } from '../../core/user/service.js'
-import { handleError } from '../../core/utils/errorHandler.js'
 
-export const getUserProfile = async (req: Request, res: Response) => {
+export const getUserProfile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	try {
 		const user = await userService.getUserProfile(req.params.userId)
 		res.json(user)
 	} catch (err) {
-		handleError(res, err)
+		next(err)
 	}
 }
 
-export const updateUserProfile = async (req: Request, res: Response) => {
+export const updateUserProfile = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	try {
 		const user = await userService.updateUser(req.user!.id, req.body)
 		res.json(user)
 	} catch (err) {
-		handleError(res, err)
+		next(err)
 	}
 }
 
-export const getUserPosts = async (req: Request, res: Response) => {
+export const getUserPosts = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	try {
 		const { page = 1, limit = 10 } = req.query
 		const posts = await userService.getUserPosts(
@@ -30,6 +41,6 @@ export const getUserPosts = async (req: Request, res: Response) => {
 		)
 		res.json(posts)
 	} catch (err) {
-		handleError(res, err)
+		next(err)
 	}
 }

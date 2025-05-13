@@ -50,3 +50,12 @@ const worker = new Worker(
 worker.on('failed', (job, error) => {
 	logger.error(`Job ${job?.id} failed: ${error.message}`)
 })
+worker.on('completed', job => {
+	if (!job.processedOn || !job.timestamp) return
+
+	logger.info({
+		event: 'avatar_processed',
+		userId: job.data.userId,
+		duration: job.processedOn - job.timestamp,
+	})
+})

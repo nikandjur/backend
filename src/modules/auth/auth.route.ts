@@ -55,7 +55,7 @@ router.use(sessionMiddleware)
  *       400:
  *         description: Ошибка валидации
  */
-router.post('/register', validate(registerSchema), register)
+router.post('/register', validate(registerSchema, 'body'), register)
 
 /**
  * @swagger
@@ -83,7 +83,7 @@ router.post('/register', validate(registerSchema), register)
  *       400:
  *         description: Неверные данные
  */
-router.post('/login', verificationLimiter, validate(loginSchema), login)
+router.post('/login', verificationLimiter, validate(loginSchema, 'body'), login)
 
 /**
  * @swagger

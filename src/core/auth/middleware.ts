@@ -1,13 +1,9 @@
-import { Request, Response, NextFunction } from 'express'
+import { NextFunction, Request, RequestHandler, Response } from 'express'
 import { prisma } from '../../db.js'
 import { logger } from '../services/logger.js'
 import { sessionService } from './session.js'
 
-export const sessionMiddleware = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => {
+export const sessionMiddleware: RequestHandler = async (req, res, next) => {
 	const sessionId = req.cookies?.sessionId
 	if (!sessionId) return next()
 
@@ -20,13 +16,18 @@ export const sessionMiddleware = async (
 
 		const user = await prisma.user.findUnique({
 			where: { id: session.userId },
-			select: { id: true, email: true, name: true, emailVerified: true },
+			select: {
+				id: true,
+				email: true,
+				name: true,
+				emailVerified: true,
+			},
 		})
 
 		if (user) {
 			req.user = {
 				...user,
-				role: session.role, // Добавляем роль из сессии
+				role: session.role,
 			}
 		}
 
@@ -37,23 +38,23 @@ export const sessionMiddleware = async (
 	}
 }
 
-export const authenticate = (
+export const authenticate: RequestHandler = (
 	req: Request,
 	res: Response,
 	next: NextFunction
-): void => {
+) => {
 	if (!req.user) {
-		res.status(401).json({ error: 'Authentication required' })
-		return // Явный return без значения
+		 res.status(401).json({ error: 'Authentication required' })
+		 return
 	}
 	next()
 }
-
 export const checkRole =
-	(role: string) => (req: Request, res: Response, next: NextFunction) => {
+	(role: string): RequestHandler =>
+	(req: Request, res: Response, next: NextFunction) => {
 		if (!req.user?.role || req.user.role !== role) {
-			 res.status(403).json({ error: 'Forbidden' })
-			 return
+			res.status(403).json({ error: 'Forbidden' })
+			return
 		}
 		next()
 	}

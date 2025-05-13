@@ -1,15 +1,20 @@
 // src/core/types/express.d.ts
-import { User, Role } from '@prisma/client'
+import { User } from '@prisma/client'
 
 declare global {
 	namespace Express {
-		interface Request {
-			user?: Pick<User, 'id' | 'email' | 'name' | 'role'> | null
-			cookies: Record<string, string>
-			session?: {
-				id: string
-				ip?: string
-			}
+		interface User {
+			id: string
+			email: string
+			name: string | null
+			role: string
 		}
+
+		interface Request {
+			user: User // Теперь user обязательный после authenticate
+			cookies: Record<string, string>
+			validatedQuery?: Record<string, unknown>
+		}
+
 	}
 }

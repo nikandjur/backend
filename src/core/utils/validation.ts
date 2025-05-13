@@ -1,28 +1,24 @@
 import { NextFunction, Request, Response } from 'express'
-import { AnyZodObject, ZodError } from 'zod'
-import { logger } from '../services/logger'
+import { AnyZodObject } from 'zod'
+import { ERRORS } from './errors'
 
-export const validate =
-	(schema: AnyZodObject, source: 'body' | 'query' | 'params' = 'body') =>
-	async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
+export const validate = (
+	schema: AnyZodObject,
+	source: 'body' | 'query' | 'params' = 'query'
+) => {
+	return async (req: Request, _res: Response, next: NextFunction) => {
 		try {
 			const result = await schema.safeParseAsync(req[source])
 
 			if (!result.success) {
-				logger.warn('Validation errors:', result.error.errors)
-				res.status(400).json({
-					error: 'Validation failed',
-					issues: result.error.errors.map(e => ({
-						field: e.path.join('.'),
-						message: e.message,
-					})),
-				})
-				return
+				throw ERRORS.badRequest('Invalid data')
 			}
 
-			req[source] = result.data
+			req[source === 'query' ? 'validatedQuery' : source] = result.data
 			next()
 		} catch (err) {
 			next(err)
 		}
 	}
+}

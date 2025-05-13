@@ -1,50 +1,72 @@
-// src/modules/auth/auth.controller.ts
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { sessionService } from '../../core/auth/session.js'
+import { logger } from '../../core/services/logger.js'
 import { userService } from '../../core/user/service.js'
-import { handleError } from '../../core/utils/errorHandler.js'
+import { ERRORS } from '../../core/utils/errors.js'
+import {
+	emailVerificationSchema,
+	loginSchema,
+	registerSchema,
+} from './auth.schema.js'
 
-export const register = async (req: Request, res: Response) => {
+const setAuthCookie = (res: Response, sessionId: string) => {
+	res.cookie('sessionId', sessionId, {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === 'production',
+		maxAge: 604800000, // 7 days
+		sameSite: 'lax',
+	})
+}
+
+export const register = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	try {
+		const validatedData = registerSchema.parse(req.body)
 		const user = await userService.register(
-			req.body.email,
-			req.body.password,
-			req.body.name
+			validatedData.email,
+			validatedData.password,
+			validatedData.name
 		)
 		res.status(201).json({ user })
-	} catch (error) {
-		handleError(res, error)
+	} catch (err) {
+		next(err)
 	}
 }
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	try {
+		const validatedData = loginSchema.parse(req.body)
+		logger.debug(`Login attempt for ${validatedData}`) 
 		const { user, sessionId } = await userService.login(
-			req.body.email,
-			req.body.password,
-			req.ip // Передаём IP из запроса
+			validatedData.email,
+			validatedData.password,
+			req.ip
 		)
 
-		res
-			.cookie('sessionId', sessionId, {
-				httpOnly: true,
-				secure: process.env.NODE_ENV === 'production',
-				maxAge: 604800000,
-				sameSite: 'lax',
-			})
-			.json({ user })
-	} catch (error) {
-		res.status(401).json({ error: 'Invalid credentials' })
-		handleError(res, error)
+		setAuthCookie(res, sessionId)
+		res.json({ user })
+	} catch (err) {
+		next(err)
 	}
 }
 
-export const logout = async (req: Request, res: Response) => {
+export const logout = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	try {
 		await sessionService.delete(req.cookies.sessionId)
-		res.clearCookie('sessionId').json({ message: 'Logged out' })
-	} catch (error) {
-		handleError(res, error)
+		res.clearCookie('sessionId').sendStatus(204)
+	} catch (err) {
+		next(err)
 	}
 }
 
@@ -52,45 +74,39 @@ export const getCurrentUser = (req: Request, res: Response) => {
 	res.json({ user: req.user })
 }
 
-export const verifyEmailHandler = async (req: Request, res: Response) => {
+export const verifyEmailHandler = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	try {
-		const { token } = req.query
-		if (!token || typeof token !== 'string') {
-			res.status(400).json({ error: 'Token is required' })
-			return
-		}
+		const { token } = emailVerificationSchema.parse(req.query)
+		const { user, sessionId } = await userService.verifyEmail(token, req.ip)
 
-		const { user, sessionId } = await userService.verifyEmail(
-			token,
-			req.ip // Передаём IP
-		)
-
-		res
-			.cookie('sessionId', sessionId, {
-				httpOnly: true,
-				secure: process.env.NODE_ENV === 'production',
-				maxAge: 604800000,
-				sameSite: 'lax',
-			})
-			.json({ user })
-	} catch (error) {
-		res.status(400).json({ error: 'Invalid or expired token' })
+		setAuthCookie(res, sessionId)
+		res.json({ user })
+	} catch (err) {
+		next(err)
 	}
 }
 
 export const resendVerificationHandler = async (
 	req: Request,
-	res: Response
+	res: Response,
+	next: NextFunction
 ) => {
 	try {
 		if (!req.user) {
-			res.status(401).json({ error: 'Authentication required' })
-			return
+			throw ERRORS.unauthorized('Authentication required')
 		}
 
 		await userService.resendVerification(req.user.id, req.user.email)
+		logger.info(`Resent verification to ${req.user.email}`, {
+			userId: req.user.id,
+			action: 'resend_verification',
+		})
 		res.json({ message: 'Verification email sent' })
-	} catch (error) {
-		handleError(res, error)
+	} catch (err) {
+		next(err)
 	}
 }

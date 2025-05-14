@@ -75,6 +75,8 @@ services:
       - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
       
   loki:
@@ -85,8 +87,9 @@ services:
     volumes:
       - ./deploy/monitoring/loki:/etc/loki
     command: 
-    - "-config.file=/etc/loki/loki-config.yaml"
-    - "-validation.allow-structured-metadata=false"
+      - "-config.file=/etc/loki/loki-config.yaml"
+      - "-validation.allow-structured-metadata=false"
+
 
   grafana:
     image: grafana/grafana:latest
@@ -94,9 +97,29 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./deploy/monitoring/grafana:/etc/grafana/provisioning
+      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning/dashboards
+      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-storage:/var/lib/grafana
     depends_on: [loki, prometheus]
 
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - "/proc:/host/proc:ro"
+      - "/sys:/host/sys:ro"
+      - "/:/rootfs:ro"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_TIME
+      - SYS_ADMIN
+      - NET_ADMIN
 
 volumes:
   pg_data:

@@ -1,49 +1,41 @@
-// src/middleware/errorHandler.ts
+import {logger} from '../services/logger'
 import { AppError } from '../types/error'
-import { logger } from '../services/logger'
 import { Request, Response, NextFunction } from 'express'
 
 export const handleError = (
-	err: Error,
+	err: unknown,
 	req: Request,
 	res: Response,
 	next: NextFunction
 ) => {
-	const error = err as AppError
+	const error = err instanceof Error ? err : new Error(String(err))
+	const statusCode = 'statusCode' in error ? (error as any).statusCode : 500
+	const code = 'code' in error ? (error as any).code : 'INTERNAL_ERROR'
+	const details = 'details' in error ? (error as any).details : undefined
 
-	// ✅ ВСЕГДА логируем ошибку
-	logger.error(
-		{
-			event: 'api_error',
-			type: error.code || 'unknown',
-			status: error.statusCode,
-			route: req.path,
-			method: req.method,
-			userId: req.user?.id || 'anonymous',
-			ip: req.ip,
-			expose: error.expose ?? true,
-			isOperational: error.isOperational ?? true,
-			error: {
-				message: error.message,
-				stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-				details: error.details,
-			},
+	const logMessage = {
+		status: statusCode,
+		code,
+		route: req.path,
+		method: req.method,
+		...(details && { details }),
+		error: {
+			message: error.message,
+			...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
 		},
-		`[${error.code}] ${error.message}`
-	)
+	}
 
-	// 📤 Отправляем клиенту безопасный ответ
-	const clientError = error.expose ? error.message : 'Internal Server Error'
-	const clientCode = error.expose && error.code ? error.code : undefined
-
-	res.status(error.statusCode).json({
-		error: clientError,
-		code: clientCode,
-		details: error.expose ? error.details : undefined,
+	if (statusCode >= 500) {
+		logger.error(logMessage, `[${code}] ${error.message}`)
+	} else {
+		logger.warn(logMessage, `[${code}] ${error.message}`)
+	}
+console.log('statusCode', error)
+	res.status(statusCode).json({
+		error: statusCode < 500 ? error.message : 'Internal Server Error',
+		...(statusCode < 500 && { code }),
+		...(details && statusCode < 500 && { details }),
 	})
 
-	// 🔁 Передаем дальше только неоперационные ошибки
-	if (!error.isOperational) {
-		next(error)
-	}
+	if (statusCode >= 500) next(error)
 }

@@ -16,6 +16,7 @@ import { serverAdapter } from './modules/monitoring/bull-board.js'
 import postRoutes from './modules/post/post.route.js'
 import storageRouter from './modules/storage/storage.route.js'
 import userRouter from './modules/user/user.route.js'
+import { register } from './core/services/metrics'
 
 // Обработка необработанных Promise-отклонений
 process.on('unhandledRejection', (reason: unknown) => {
@@ -32,7 +33,7 @@ initRoles()
 const app = express()
 // Middleware для сбора метрик
 app.use((req, res, next) => {
-	const end = metrics.httpRequestDuration.startTimer()
+	const start = Date.now()
 	const route = req.route?.path || req.path
 
 	res.on('finish', () => {
@@ -41,11 +42,25 @@ app.use((req, res, next) => {
 			route,
 			status: res.statusCode,
 		})
-		end({ method: req.method, route })
+
+		metrics.httpRequestDuration.observe(
+			{
+				method: req.method,
+				route,
+			},
+			(Date.now() - start) / 1000
+		)
 	})
 
 	next()
 })
+
+// Эндпоинт /metrics
+app.get('/metrics', async (_req, res) => {
+    res.set('Content-Type', register.contentType)
+    res.end(await register.metrics())
+})
+
 // Логирование входящих запросов
 app.use(httpLogger)
 

@@ -35,37 +35,28 @@ model User {
   updatedAt     DateTime  @updatedAt
 }
 
+model Post {
+  id            String    @id @default(cuid())
+  title         String
+  content       String?
+  likesCount    Int       @default(0)
+  views         Int       @default(0)
+  commentsCount Int       @default(0)
+  author        User      @relation(fields: [authorId], references: [id])
+  authorId      String
+  tags          Tag[]
+  comments      Comment[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([title, content], map: "post_title_content_idx")
+}
+
 model Tag {
   id        String    @id @default(cuid())
   name      String    @unique
-  posts     PostTag[]
+  posts     Post[]
   createdAt DateTime  @default(now())
-}
-
-model PostTag {
-  post   Post   @relation(fields: [postId], references: [id])
-  tag    Tag    @relation(fields: [tagId], references: [id])
-  postId String
-  tagId  String
-
-  @@id([postId, tagId])
-}
-
-model Post {
-  id        String    @id @default(cuid())
-  title     String
-  content   String?
-  likes     Int       @default(0)
-  views     Int       @default(0)
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  String
-  tags      PostTag[]
-  comments  Comment[] // Добавлена обратная связь
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@index([title, content], map: "post_title_content_idx")
-  
 }
 
 model Comment {

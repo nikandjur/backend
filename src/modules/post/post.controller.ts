@@ -4,16 +4,17 @@ import { postService } from '../../core/post/post.service.js'
 import { searchService } from '../../core/post/search.service.js'
 import { ERRORS } from '../../core/utils/errors.js'
 import { logger } from '../../core/services/logger.js'
+import { postStats } from '../../core/post/post.stats.js'
 
 export const postController = {
 	async createPost(req: Request, res: Response, next: NextFunction) {
 		try {
 			const { title, content, tags } = req.body
-			const post = await postService.createPostWithTags(
+			const post = await postService.createPost(
 				req.user.id,
 				title,
 				content,
-				tags || []
+				tags
 			)
 			res.status(201).json(post)
 		} catch (err) {
@@ -23,25 +24,16 @@ export const postController = {
 
 	// Получение поста
 	async getPost(req: Request, res: Response, next: NextFunction) {
-		try {
-			await postService.incrementViews(req.params.id)
-			const post = await postService.getPostById(req.params.id)
-
-			if (!post) {
-				throw ERRORS.notFound('Post not found')
-			}
-
-			  logger.info({
-					event: 'post_view',
-					postId: post.id,
-					userId: req.user?.id,
-				})
-
-			res.json(post)
-		} catch (err) {
-			next(err)
-		}
-	},
+    try {
+      const post = await postService.getPostById(req.params.id)
+      if (!post) throw ERRORS.notFound('Post not found')
+      
+      await postStats.view(post.id)
+      res.json(post)
+    } catch (err) {
+      next(err)
+    }
+  },
 
 	// Обновление поста
 	async updatePost(req: Request, res: Response, next: NextFunction) {
@@ -83,17 +75,7 @@ export const postController = {
 	// Лайк поста
 	async likePost(req: Request, res: Response, next: NextFunction) {
 		try {
-			await postService.likePost(req.params.id, req.user.id)
-			res.status(204).end()
-		} catch (err) {
-			next(err)
-		}
-	},
-
-	// Снятие лайка
-	async unlikePost(req: Request, res: Response, next: NextFunction) {
-		try {
-			await postService.unlikePost(req.params.id, req.user.id)
+			await postStats.like(req.params.id, req.user.id)
 			res.status(204).end()
 		} catch (err) {
 			next(err)
@@ -106,13 +88,14 @@ export const postController = {
 				throw ERRORS.unauthorized('Authentication required')
 			}
 
-			const posts = await postService.getRecommendedPosts(req.user.id)
-			res.json(posts)
+			// const posts = await postService.getRecommendedPosts(req.user.id)
+			// res.json(posts)
 		} catch (err) {
 			next(err)
 		}
 	},
 	async getTopPosts(req: Request, res: Response, next: NextFunction) {
+		
 		try {
 			const topPosts = await postService.getTopPosts()
 			res.json(topPosts)

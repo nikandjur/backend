@@ -1,9 +1,9 @@
 import { Worker } from 'bullmq'
 import 'dotenv/config'
 import sharp from 'sharp'
-import { logger } from '../../core/services/logger.js'
-import redis from '../../core/services/redis/client.js'
-import { minioClient } from '../../core/services/storage/client.js'
+import { logger } from '../services/logger.js'
+import redis from '../services/redis/client.js'
+import { minioClient } from './client.js'
 
 const worker = new Worker(
 	'avatar-optimization',
@@ -46,6 +46,7 @@ const worker = new Worker(
 	},
 	{ connection: redis }
 )
+console.log('avatar - worker')
 
 worker.on('failed', (job, error) => {
 	logger.error(`Job ${job?.id} failed: ${error.message}`)

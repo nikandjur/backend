@@ -1,7 +1,7 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 import { prisma } from '../../db.js'
+import { sessionService } from '../auth/session.js'
 import { logger } from '../services/logger.js'
-import { sessionService } from './session.js'
 
 export const sessionMiddleware: RequestHandler = async (req, res, next) => {
 	const sessionId = req.cookies?.sessionId
@@ -44,8 +44,8 @@ export const authenticate: RequestHandler = (
 	next: NextFunction
 ) => {
 	if (!req.user) {
-		 res.status(401).json({ error: 'Authentication required' })
-		 return
+		res.status(401).json({ error: 'Authentication required' })
+		return
 	}
 	next()
 }

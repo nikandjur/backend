@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express'
+import { avatarQueue } from '../../core/storage/avatar.queue.js'
 import {
 	generateAvatarUploadData,
 	generatePresignedUrl,
 	getObjectUrl,
 	validateAvatarObjectName,
-} from '../../core/services/storage/service.js'
-import { avatarQueue } from './avatar.queue'
+} from '../../core/storage/service.js'
 
 export const handleGenerateUploadUrl = async (
 	req: Request,
@@ -39,7 +39,6 @@ export const handleGenerateAvatarUrl = async (
 		next(err)
 	}
 }
-
 
 export const handleConfirmAvatar = async (
 	req: Request,

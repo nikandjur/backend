@@ -21,11 +21,6 @@ export const logger = pino({
 	},
 })
 
-export const httpLogger = pinoHttp({
-	logger,
-	autoLogging: !isDev, // Логируем все запросы только в prod
-	customLogLevel: (_, res) =>
-		res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',
-})
+
 
 

@@ -1,5 +1,5 @@
-import { logger } from '../logger.js'
-import { minioClient, bucketName } from './client.js'
+import { logger } from '../services/logger.js'
+import { bucketName, minioClient } from './client.js'
 
 export const initStorage = async () => {
 	try {

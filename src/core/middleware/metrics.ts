@@ -12,11 +12,6 @@ const register = new Registry()
 // 2. Регистрируем стандартные метрики с префиксом
 collectDefaultMetrics({ register, prefix: 'node_' })
 
-// // 3. Обновляем стандартные метрики вручную (если нужно)
-// const interval = setInterval(() => {
-// 	collectDefaultMetrics({ register, prefix: 'node_' })
-// }, 5000)
-
 // 4. Кастомные метрики
 export const metrics = {
 	httpRequestsTotal: new Counter({

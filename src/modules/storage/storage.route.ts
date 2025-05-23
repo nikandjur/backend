@@ -1,12 +1,12 @@
 import { Router } from 'express'
-import { authenticate } from '../../core/auth/middleware.js'
-import { validate } from '../../core/utils/validation.js'
-import { avatarConfirmSchema, fileUploadSchema } from './storage.schema.js'
+import { authenticate } from '../../core/middleware/middleware.js'
 import {
 	handleConfirmAvatar,
 	handleGenerateAvatarUrl,
 	handleGenerateUploadUrl,
 } from './storage.controller.js'
+import { avatarConfirmSchema, fileUploadSchema } from './storage.schema.js'
+import { validate } from '../../core/middleware/validation.js'
 
 const router = Router()
 

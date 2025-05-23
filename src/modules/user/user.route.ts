@@ -1,28 +1,27 @@
 // src/modules/user/user.route.ts
 import { Router } from 'express'
-import { authenticate } from '../../core/auth/middleware.js'
-import { validate } from '../../core/utils/validation.js'
+import { authenticate } from '../../core/middleware/middleware.js'
 import {
+	getUserPosts,
 	getUserProfile,
 	updateUserProfile,
-	getUserPosts,
-
 } from './user.controller.js'
 import {
+	paginationSchema,
 	profileUpdateSchema,
 	userIdParamsSchema,
-	paginationSchema,
 } from './user.schema.js'
+import { validate } from '../../core/middleware/validation.js'
 
 const router = Router()
 
 // Профиль пользователя
 router.get('/:userId', validate(userIdParamsSchema, 'params'), getUserProfile)
 router.put(
-  '/profile',
-  authenticate,
-  validate(profileUpdateSchema),
-  updateUserProfile
+	'/profile',
+	authenticate,
+	validate(profileUpdateSchema),
+	updateUserProfile
 )
 
 // Контент

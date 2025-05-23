@@ -1,18 +1,12 @@
 // src/modules/post/post.route.ts
 import { Router } from 'express'
-import { authenticate } from '../../core/auth/middleware.js'
-import { validate } from '../../core/utils/validation.js'
+import { authenticate } from '../../core/middleware/middleware.js'
+
 import { postController } from './post.controller.js'
 import { postSchema } from './post.schema.js'
+import { validate } from '../../core/middleware/validation.js'
 
 const router = Router()
-
-/**
- * @swagger
- * tags:
- *   name: Posts
- *   description: Управление постами
- */
 
 /**
  * @swagger
@@ -100,7 +94,7 @@ const router = Router()
 router.post(
 	'/',
 	authenticate,
-	validate(postSchema.create),
+	validate(postSchema.create, 'body'),
 	postController.createPost
 )
 /**
@@ -138,11 +132,53 @@ router.post(
  *       400:
  *         description: Не указан поисковый запрос
  */
-router.get(
-	'/search',
-	validate(postSchema.search),
-	postController.searchPosts
-)
+router.get('/search', validate(postSchema.search), postController.searchPosts)
+/**
+ * @swagger
+ * /api/posts/top:
+ *   get:
+ *     summary: Получить топ постов
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Список топ постов
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Post'
+ */
+router.get('/top', postController.getTopPosts)
+/**
+ * @swagger
+ * /api/posts/{id}/like:
+ *   post:
+ *     summary: Поставить лайк посту
+ *     tags: [Posts]
+ *     security:
+ *       - sessionCookie: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Лайк успешно поставлен
+ *       400:
+ *         description: Уже лайкнуто
+ *       401:
+ *         description: Неавторизованный доступ
+ */
+router.post('/:id/like', authenticate, postController.likePost)
 /**
  * @swagger
  * /api/posts/{id}:
@@ -230,95 +266,6 @@ router.patch(
  *         description: Нет прав на удаление
  */
 router.delete('/:id', authenticate, postController.deletePost)
-/**
- * @swagger
- * /api/posts/{id}/like:
- *   post:
- *     summary: Поставить лайк посту
- *     tags: [Posts]
- *     security:
- *       - sessionCookie: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       204:
- *         description: Лайк успешно поставлен
- *       400:
- *         description: Уже лайкнуто
- *       401:
- *         description: Неавторизованный доступ
- */
-router.post('/:id/like', authenticate, postController.likePost)
-/**
- * @swagger
- * /api/posts/{id}/like:
- *   delete:
- *     summary: Убрать лайк с поста
- *     tags: [Posts]
- *     security:
- *       - sessionCookie: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       204:
- *         description: Лайк успешно убран
- *       400:
- *         description: Лайк не найден
- *       401:
- *         description: Неавторизованный доступ
- */
-router.delete('/:id/like', authenticate, postController.unlikePost)
-/**
- * @swagger
- * /api/posts/recommended:
- *   get:
- *     summary: Получить рекомендованные посты
- *     tags: [Posts]
- *     security:
- *       - sessionCookie: []
- *     responses:
- *       200:
- *         description: Список рекомендованных постов
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Post'
- *       401:
- *         description: Неавторизованный доступ
- */
-router.get('/recommended', authenticate, postController.getRecommendedPosts)
-/**
- * @swagger
- * /api/posts/top:
- *   get:
- *     summary: Получить топ постов
- *     tags: [Posts]
- *     parameters:
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *     responses:
- *       200:
- *         description: Список топ постов
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Post'
- */
-router.get('/top', postController.getTopPosts)
+
 
 export default router

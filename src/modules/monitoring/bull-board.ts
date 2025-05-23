@@ -1,14 +1,15 @@
-import { ExpressAdapter } from '@bull-board/express'
-import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js'
 import { createBullBoard } from '@bull-board/api'
-import { avatarQueue } from '../storage/avatar.queue.js' // Импорт вашей очереди
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter.js'
+import { ExpressAdapter } from '@bull-board/express'
+import { avatarQueue } from '../../core/storage/avatar.queue'
+import { postQueue } from '../../core/post/post.queue'
 
 const serverAdapter = new ExpressAdapter()
 serverAdapter.setBasePath('/admin/queues')
 
 createBullBoard({
-	queues: [new BullMQAdapter(avatarQueue)],
-	serverAdapter: serverAdapter,
+	queues: [new BullMQAdapter(avatarQueue), new BullMQAdapter(postQueue)],
+	serverAdapter,
 })
 
 export { serverAdapter }

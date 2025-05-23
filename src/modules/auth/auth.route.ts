@@ -1,23 +1,27 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
-import { authenticate, sessionMiddleware } from '../../core/auth/middleware.js'
-import { validate } from '../../core/utils/validation.js'
-import { 
-  getCurrentUser,
-  login,
-  logout,
-  register,
-  resendVerificationHandler,
-  verifyEmailHandler,
-} from './auth.controller.js';
+import {
+	authenticate,
+	sessionMiddleware,
+} from '../../core/middleware/middleware.js'
+
+import {
+	getCurrentUser,
+	login,
+	logout,
+	register,
+	resendVerificationHandler,
+	verifyEmailHandler,
+} from './auth.controller.js'
 import { loginSchema, registerSchema } from './auth.schema.js'
+import { validate } from '../../core/middleware/validation.js'
 
 const router = Router()
 const verificationLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 5,
-  message: 'Too many login attempts, please try later',
-});
+	windowMs: 15 * 60 * 1000, // 15 минут
+	max: 5,
+	message: 'Too many login attempts, please try later',
+})
 router.use(sessionMiddleware)
 /**
  * @swagger
@@ -191,6 +195,5 @@ router.post(
 	verificationLimiter,
 	resendVerificationHandler
 )
-
 
 export default router

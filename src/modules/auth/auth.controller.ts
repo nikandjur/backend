@@ -81,6 +81,7 @@ export const verifyEmailHandler = async (
 ) => {
 	try {
 		const { token } = emailVerificationSchema.parse(req.query)
+		console.log('token',token,'req',req.query)
 		const { user, sessionId } = await userService.verifyEmail(token, req.ip)
 
 		setAuthCookie(res, sessionId)

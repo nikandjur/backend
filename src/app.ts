@@ -3,12 +3,18 @@ import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 import qs from 'qs'
-import { authenticate, sessionMiddleware } from './core/auth/middleware.js'
+import { handleError } from './core/middleware/handlerError.js'
+import { httpLogger } from './core/middleware/httpLogger.js'
+import { register } from './core/middleware/metrics.js'
+import { metricsMiddleware } from './core/middleware/metrics.middleware.js'
+import {
+	authenticate,
+	sessionMiddleware,
+} from './core/middleware/middleware.js'
+import { slowRequestLogger } from './core/middleware/slowRequestLogger.js'
 import { initRoles } from './core/roles/init.js'
-import { httpLogger, logger } from './core/services/logger.js'
-import { metrics } from './core/services/metrics'
-import { initStorage } from './core/services/storage/service.js'
-import { handleError } from './core/utils/errorHandler.js'
+import { logger } from './core/services/logger.js'
+import { initStorage } from './core/storage/service.js'
 import { setupSwagger } from './docs/swagger.js'
 import authRouter from './modules/auth/auth.route.js'
 import commentRouter from './modules/comment/comment.route.js'
@@ -16,7 +22,6 @@ import { serverAdapter } from './modules/monitoring/bull-board.js'
 import postRoutes from './modules/post/post.route.js'
 import storageRouter from './modules/storage/storage.route.js'
 import userRouter from './modules/user/user.route.js'
-import { register } from './core/services/metrics'
 
 // Обработка необработанных Promise-отклонений
 process.on('unhandledRejection', (reason: unknown) => {
@@ -31,38 +36,21 @@ initStorage().catch(error => {
 initRoles()
 
 const app = express()
-// Middleware для сбора метрик
-app.use((req, res, next) => {
-	const start = Date.now()
-	const route = req.route?.path || req.path
-
-	res.on('finish', () => {
-		metrics.httpRequestsTotal.inc({
-			method: req.method,
-			route,
-			status: res.statusCode,
-		})
-
-		metrics.httpRequestDuration.observe(
-			{
-				method: req.method,
-				route,
-			},
-			(Date.now() - start) / 1000
-		)
-	})
-
-	next()
-})
+app.use(httpLogger)
+app.use(slowRequestLogger(300)) // Логировать запросы дольше 300мс
+app.use(metricsMiddleware) // Middleware для сбора метрик
 
 // Эндпоинт /metrics
-app.get('/metrics', async (_req, res) => {
-    res.set('Content-Type', register.contentType)
-    res.end(await register.metrics())
+app.get('/metrics', async (req, res) => {
+	if (process.env.NODE_ENV === 'development') {
+		res.set('Content-Type', register.contentType)
+		res.end(await register.metrics())
+	} else {
+		res.status(404).end()
+	}
 })
 
 // Логирование входящих запросов
-app.use(httpLogger)
 
 app.set('query parser', (str: string) => {
 	try {
@@ -98,6 +86,6 @@ app.use('/api/posts', postRoutes)
 app.use('/api', storageRouter)
 app.use('/api', commentRouter)
 
-app.use(handleError) // Обработка ошибок (старая версия, для совместимости с другими модулями)
+app.use(handleError) // Обработка ошибок
 
 export default app

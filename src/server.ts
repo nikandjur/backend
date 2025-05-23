@@ -1,5 +1,7 @@
 import 'dotenv/config'
 import app from './app.js'
+import './core/post/post.worker.js'
+import './core/storage/avatar.worker.js'
 
 const PORT = process.env.PORT || 5000
 

@@ -1,7 +1,7 @@
 generator client {
   provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/client"
   binaryTargets = ["native", "debian-openssl-3.0.x", "debian-openssl-1.1.x"]
-  output        = "../node_modules/.prisma/client" // Явно указываем путь
 }
 
 datasource db {
@@ -13,9 +13,9 @@ model Role {
   id          String   @id @default(cuid())
   name        String   @unique
   description String?
-  users       User[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  users       User[]
 }
 
 model User {
@@ -27,47 +27,48 @@ model User {
   bio           String?
   website       String?
   emailVerified DateTime?
-  role          Role      @relation(fields: [roleId], references: [id])
   roleId        String
-  posts         Post[]
-  comments      Comment[] // Добавлена обратная связь
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  comments      Comment[]
+  posts         Post[]
+  role          Role      @relation(fields: [roleId], references: [id])
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model Post {
   id            String    @id @default(cuid())
   title         String
   content       String?
-  likesCount    Int       @default(0)
   views         Int       @default(0)
-  commentsCount Int       @default(0)
-  author        User      @relation(fields: [authorId], references: [id])
   authorId      String
-  tags          Tag[]
-  comments      Comment[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  commentsCount Int       @default(0)
+  likesCount    Int       @default(0)
+  comments      Comment[]
+  author        User      @relation(fields: [authorId], references: [id])
+  tags          Tag[]     @relation("PostToTag")
 
   @@index([title, content], map: "post_title_content_idx")
 }
 
 model Tag {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  posts     Post[]
-  createdAt DateTime  @default(now())
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  posts     Post[]   @relation("PostToTag")
 }
 
 model Comment {
   id        String   @id @default(cuid())
   text      String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId])
   @@index([authorId])

@@ -10,7 +10,6 @@ interface SearchResult {
 		id: string
 		name: string
 	}
-	tags: string[]
 	relevance: number
 }
 
@@ -19,7 +18,7 @@ export const searchService = {
 		query: string,
 		limit: number = 50
 	): Promise<SearchResult[]> {
-		return await prisma.$queryRaw`
+		return await prisma.$queryRaw<SearchResult[]>`
       SELECT 
         p.id,
         p.title,
@@ -44,14 +43,7 @@ export const searchService = {
           FROM "User" u 
           WHERE u.id = p."authorId"
         ) as author,
-        -- Список тегов
-        (
-          SELECT json_agg(t.name) 
-          FROM "Tag" t 
-          JOIN "PostTag" pt ON t.id = pt."tagId" 
-          WHERE pt."postId" = p.id
-        ) as tags,
-        -- Комбинированная релевантность (FTS + триграммы)
+        -- Релевантность (только по title и content)
         GREATEST(
           COALESCE(
             ts_rank_cd(

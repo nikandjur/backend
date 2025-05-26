@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { AnyZodObject, ZodIssue } from 'zod'
-import { ERRORS } from '../utils/errors'
+import { ERRORS } from '../utils/errors.js'
 
 // Вспомогательный тип для деталей ошибки
 type ValidationErrorDetail = {

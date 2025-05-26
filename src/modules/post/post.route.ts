@@ -1,7 +1,5 @@
-// src/modules/post/post.route.ts
 import { Router } from 'express'
 import { authenticate } from '../../core/middleware/middleware.js'
-
 import { postController } from './post.controller.js'
 import { postSchema } from './post.schema.js'
 import { validate } from '../../core/middleware/validation.js'
@@ -10,69 +8,12 @@ const router = Router()
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     Post:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           example: "clnjak7xj000008l0a9zq3k4f"
- *         title:
- *           type: string
- *           example: "Мой первый пост"
- *         content:
- *           type: string
- *           example: "Содержание моего первого поста"
- *         likes:
- *           type: integer
- *           example: 5
- *         createdAt:
- *           type: string
- *           format: date-time
- *           example: "2023-10-01T12:00:00Z"
- *         author:
- *           $ref: '#/components/schemas/User'
- *         tags:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/Tag'
- *     PostCreate:
- *       type: object
- *       required:
- *         - title
- *         - content
- *       properties:
- *         title:
- *           type: string
- *           minLength: 3
- *           maxLength: 100
- *           example: "Мой первый пост"
- *         content:
- *           type: string
- *           minLength: 10
- *           maxLength: 5000
- *           example: "Содержание моего первого поста"
- *         tags:
- *           type: array
- *           items:
- *             type: string
- *             example: "технологии"
- *     PostUpdate:
- *       allOf:
- *         - $ref: '#/components/schemas/PostCreate'
- *         - type: object
- *           properties: {}
- */
-
-/**
- * @swagger
  * /api/posts:
  *   post:
  *     summary: Создать новый пост
  *     tags: [Posts]
  *     security:
- *       - sessionCookie: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -97,6 +38,7 @@ router.post(
 	validate(postSchema.create, 'body'),
 	postController.createPost
 )
+
 /**
  * @swagger
  * /api/posts/search:
@@ -133,6 +75,7 @@ router.post(
  *         description: Не указан поисковый запрос
  */
 router.get('/search', validate(postSchema.search), postController.searchPosts)
+
 /**
  * @swagger
  * /api/posts/top:
@@ -156,6 +99,7 @@ router.get('/search', validate(postSchema.search), postController.searchPosts)
  *                 $ref: '#/components/schemas/Post'
  */
 router.get('/top', postController.getTopPosts)
+
 /**
  * @swagger
  * /api/posts/{id}/like:
@@ -163,7 +107,7 @@ router.get('/top', postController.getTopPosts)
  *     summary: Поставить лайк посту
  *     tags: [Posts]
  *     security:
- *       - sessionCookie: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -179,6 +123,7 @@ router.get('/top', postController.getTopPosts)
  *         description: Неавторизованный доступ
  */
 router.post('/:id/like', authenticate, postController.likePost)
+
 /**
  * @swagger
  * /api/posts/{id}:
@@ -203,6 +148,7 @@ router.post('/:id/like', authenticate, postController.likePost)
  *         description: Пост не найден
  */
 router.get('/:id', postController.getPost)
+
 /**
  * @swagger
  * /api/posts/{id}:
@@ -210,7 +156,7 @@ router.get('/:id', postController.getPost)
  *     summary: Обновить пост
  *     tags: [Posts]
  *     security:
- *       - sessionCookie: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -243,6 +189,7 @@ router.patch(
 	validate(postSchema.create.partial()),
 	postController.updatePost
 )
+
 /**
  * @swagger
  * /api/posts/{id}:
@@ -250,7 +197,7 @@ router.patch(
  *     summary: Удалить пост
  *     tags: [Posts]
  *     security:
- *       - sessionCookie: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -266,6 +213,5 @@ router.patch(
  *         description: Нет прав на удаление
  */
 router.delete('/:id', authenticate, postController.deletePost)
-
 
 export default router

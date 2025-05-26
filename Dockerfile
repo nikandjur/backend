@@ -1,8 +1,10 @@
-FROM node:20
+FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
+COPY prisma ./prisma/
+
 RUN npm ci --omit=dev
 
 COPY . .
@@ -11,4 +13,4 @@ RUN npm run build
 
 EXPOSE 5000
 
-CMD ["node", "dist/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]

@@ -1,6 +1,6 @@
 // src/modules/avatar/avatar.queue.ts
 import { Queue } from 'bullmq'
-import redis from '../services/redis/client'
+import redis from '../services/redis/client.js'
 
 export const avatarQueue = new Queue('avatar-optimization', {
 	connection: redis,

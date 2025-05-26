@@ -1,7 +1,7 @@
 // src/modules/post/post.controller.ts
 import { NextFunction, Request, Response } from 'express'
 import { postService } from '../../core/post/post.service.js'
-import { searchService } from '../../core/post/search.service.js'
+import { searchService } from '../../core/post/posts.search.js'
 import { ERRORS } from '../../core/utils/errors.js'
 import { logger } from '../../core/services/logger.js'
 import { postStats } from '../../core/post/post.stats.js'
@@ -9,12 +9,11 @@ import { postStats } from '../../core/post/post.stats.js'
 export const postController = {
 	async createPost(req: Request, res: Response, next: NextFunction) {
 		try {
-			const { title, content, tags } = req.body
+			const { title, content } = req.body
 			const post = await postService.createPost(
 				req.user.id,
 				title,
-				content,
-				tags
+				content
 			)
 			res.status(201).json(post)
 		} catch (err) {
@@ -82,18 +81,6 @@ export const postController = {
 		}
 	},
 
-	async getRecommendedPosts(req: Request, res: Response, next: NextFunction) {
-		try {
-			if (!req.user) {
-				throw ERRORS.unauthorized('Authentication required')
-			}
-
-			// const posts = await postService.getRecommendedPosts(req.user.id)
-			// res.json(posts)
-		} catch (err) {
-			next(err)
-		}
-	},
 	async getTopPosts(req: Request, res: Response, next: NextFunction) {
 		
 		try {

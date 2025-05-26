@@ -1,10 +1,9 @@
 import pino from 'pino'
-import pinoHttp from 'pino-http'
-import { Request, Response } from 'express'
+// import * as pino from 'pino'
 
 const isDev = process.env.NODE_ENV === 'development'
 
-export const logger = pino({
+export const logger = pino.default({
 	level: process.env.LOG_LEVEL || 'info',
 	transport: isDev
 		? {

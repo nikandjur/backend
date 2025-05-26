@@ -1,12 +1,16 @@
-import { Post, Tag } from '@prisma/client'
+import { Post } from '@prisma/client'
 
-export type PostWithStats = Post & {
-	likesCount: number
-	views: number
-	tags: Tag[]
+// Убираем дублирующие поля, используем существующие из Prisma
+export interface PostWithStats extends Omit<Post, 'likesCount' | 'views'> {
+	likes: number // Переименовываем likesCount в более простое likes
+	views: number // Оставляем views как есть
+	author: {
+		id: string
+		name: string | null
+		avatarUrl: string | null
+	}
 }
 
 export type ActivityJob =
 	| { type: 'like'; postId: string; userId: string }
-	// | { type: 'unlike'; postId: string; userId: string }
 	| { type: 'view'; postId: string }

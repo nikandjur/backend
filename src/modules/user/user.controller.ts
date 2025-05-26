@@ -6,6 +6,7 @@ export const getUserProfile = async (
 	res: Response,
 	next: NextFunction
 ) => {
+	console.log('getUserProfile')
 	try {
 		const user = await userService.getUserProfile(req.params.userId)
 		res.json(user)

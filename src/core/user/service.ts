@@ -142,6 +142,7 @@ export const userService = {
 	},
 
 	async getUserPosts(userId: string, page: number = 1, limit: number = 10) {
+		
 		return prisma.post.findMany({
 			where: { authorId: userId },
 			skip: (page - 1) * limit,

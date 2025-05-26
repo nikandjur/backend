@@ -22,13 +22,8 @@ const verificationLimiter = rateLimit({
 	max: 5,
 	message: 'Too many login attempts, please try later',
 })
+
 router.use(sessionMiddleware)
-/**
- * @swagger
- * tags:
- *   name: Auth
- *   description: Авторизация и аутентификация
- */
 
 /**
  * @swagger

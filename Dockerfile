@@ -1,16 +1,14 @@
 FROM node:20-alpine
 
 WORKDIR /app
-
 COPY package*.json ./
 COPY prisma ./prisma/
 
 RUN npm ci --omit=dev
 
-COPY . .
-
-RUN npm run build
+COPY dist ./dist
+COPY tests ./tests  # Копируем тесты
+COPY .env.prod .   # Используем production-конфиг
 
 EXPOSE 5000
-
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+CMD ["npm", "run", "start:prod"]

@@ -1,6 +1,6 @@
 // src/core/middleware/metrics.middleware.ts
 import { NextFunction, Request, Response } from 'express'
-import { metrics } from './metrics'
+import { metrics } from './metrics.js'
 
 
 export const metricsMiddleware = (

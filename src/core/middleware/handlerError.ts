@@ -1,5 +1,5 @@
-import { logger } from '../services/logger'
-import { AppError } from '../types/error'
+import { logger } from '../services/logger.js'
+import { AppError } from '../types/error.js'
 import { Request, Response, NextFunction } from 'express'
 
 export const handleError = (
@@ -9,11 +9,11 @@ export const handleError = (
 	next: NextFunction
 ) => {
 	const error = err instanceof Error ? err : new Error(String(err))
+	const appError = error as unknown as AppError
 
-	const statusCode =
-		'statusCode' in error ? (error as AppError).statusCode : 500
-	const code = 'code' in error ? (error as AppError).code : `HTTP_${statusCode}`
-	const detail = 'detail' in error ? (error as AppError).detail : undefined
+	const statusCode = appError.statusCode || 500
+	const code = appError.code || `HTTP_${statusCode}`
+	const detail = appError.details
 
 	// Логируем только необходимое
 	logger[statusCode >= 500 ? 'error' : 'warn']({

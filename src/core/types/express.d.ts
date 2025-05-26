@@ -14,6 +14,7 @@ declare global {
 			user: User // Теперь user обязательный после authenticate
 			cookies: Record<string, string>
 			validatedQuery?: Record<string, unknown>
+			correlationId?: string
 		}
 
 	}

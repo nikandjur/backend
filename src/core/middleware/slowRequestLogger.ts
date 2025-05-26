@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { logger } from '../services/logger'
+import { logger } from '../services/logger.js'
 
 export const slowRequestLogger = (thresholdMs = 300) => {
 	return (req: Request, res: Response, next: NextFunction) => {

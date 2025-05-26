@@ -1,6 +1,5 @@
 # Исключаем всё, что не нужно в контейнере
 node_modules
-dist
 Dockerfile
 docker-compose.yml
 .dockerignore
@@ -8,6 +7,12 @@ docker-compose.yml
 # .env.*
 *.sqlite
 *.log
+.env.local
+.env.development
+.env.staging
+__generated__
+swagger.json
+orval.config.ts
 *.test.ts
 *.spec.ts
 coverage

@@ -1,40 +1,79 @@
-name: Deploy to VPS
+name: Secure Root Deployment
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  TARGET_DIR: /root/myapp
+  TEMP_DIR: /tmp/deploy_${{ github.run_id }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Rsync files
-      uses: burnett01/rsync-deployments@7.0.2
-      with:
-        switches: -avzr --delete
-        path: |
-          Dockerfile
-          docker-compose.prod.yml
-          .env.prod
-          dist/
-          prisma/
-          nginx/
-        remote_path: /home/${{ secrets.SSH_USER }}/myapp/
-        remote_host: ${{ secrets.SSH_HOST }}
-        remote_user: ${{ secrets.SSH_USER }}
-        remote_key: ${{ secrets.SSH_KEY }}
+      - name: Validate critical files
+        run: |
+          if [ ! -f "Dockerfile" ] || [ ! -f "docker-compose.prod.yml" ] || [ ! -f ".env.prod" ]; then
+            echo "::error::Missing required deployment files!"
+            exit 1
+          fi
 
+      - name: Secure file transfer
+        uses: appleboy/scp-action@v7.0.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          source: "Dockerfile,docker-compose.prod.yml,.env.prod,dist/,prisma/,nginx/"
+          target: ${{ env.TEMP_DIR }}
+          rm: true
+          strip_components: 1
 
-      
-      - name: Restart Docker
+      - name: Atomic deployment
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/myapp
-            docker-compose -f docker-compose.prod.yml down
+            # Create backup if exists
+            if [ -d "${{ env.TARGET_DIR }}" ]; then
+              backup_dir="/root/myapp_backup_$(date +%Y%m%d_%H%M%S)"
+              cp -R ${{ env.TARGET_DIR }} $backup_dir
+              echo "Created backup in $backup_dir"
+            fi
+
+            # Secure deployment procedure
+            mkdir -p ${{ env.TARGET_DIR }}
+            rsync -a --delete ${{ env.TEMP_DIR }}/ ${{ env.TARGET_DIR }}/
+            chmod 700 ${{ env.TARGET_DIR }}
+            chmod 600 ${{ env.TARGET_DIR }}/.env.prod
+            
+            # Docker operations
+            cd ${{ env.TARGET_DIR }}
+            docker-compose -f docker-compose.prod.yml down --remove-orphans
             docker-compose -f docker-compose.prod.yml up -d --build
+            
+            # Cleanup
+            rm -rf ${{ env.TEMP_DIR }}
+            docker system prune -af --filter "until=24h"
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "### File permissions ###"
+            ls -la ${{ env.TARGET_DIR }}
+            echo -e "\n### Running containers ###"
+            docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo -e "\n### Service health ###"
+            docker-compose -f ${{ env.TARGET_DIR }}/docker-compose.prod.yml ps

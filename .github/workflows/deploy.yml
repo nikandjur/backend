@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p ./deploy-root
           cp Dockerfile docker-compose.prod.yml .env.prod package*.json ./deploy-root/
-          cp -r prisma nginx html ./deploy-root/
+          cp -r prisma nginx ./deploy-root/
 
       - name: Copy files to server
         run: |

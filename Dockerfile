@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN ls -la /app/src
+RUN ls -la /app
 RUN npm run build
 
 # Stage 2: Run app

@@ -73,6 +73,8 @@ services:
 volumes:
   pgdata:
   minio_data:
+  nginx_ssl:
+    driver: local
 
 networks:
   backend:

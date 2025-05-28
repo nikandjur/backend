@@ -34,9 +34,8 @@ jobs:
       - name: Prepare deploy directory
         run: |
           mkdir -p ./deploy-root
-          cp Dockerfile docker-compose.prod.yml .env.prod ./deploy-root/
-          cp -r prisma nginx ./deploy-root/
-          mkdir -p ./deploy-root/html
+          cp Dockerfile docker-compose.prod.yml .env.prod package*.json ./deploy-root/
+          cp -r prisma nginx html ./deploy-root/
 
       - name: Copy files to server
         run: |

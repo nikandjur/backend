@@ -6,7 +6,9 @@
 		"moduleResolution": "node",
 		"resolveJsonModule": true,
 		"sourceMap": false,
-		"noEmitOnError": true
+		"noEmitOnError": true,
+		"outDir": "./dist",
+		"rootDir": "./src"
 	},
 	"include": ["src/**/*"]
 }

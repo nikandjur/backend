@@ -8,20 +8,21 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Copy files to VPS
-        uses: appleboy/scp-action@v1
+      - name: Rsync files
+        uses: burnett01/rsync-deployments@5.2.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          source: |
+          switches: -avzr --delete
+          path: |
             Dockerfile
             docker-compose.prod.yml
             .env.prod
             dist/
             prisma/
             nginx/
-          target: "~/myapp/"
+          remote_path: ~/myapp/
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_KEY }}
       
       - name: Restart Docker
         uses: appleboy/ssh-action@v1

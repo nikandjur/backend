@@ -2,8 +2,7 @@
 node_modules
 docker-compose.yml
 .dockerignore
-# .env
-# .env.*
+.git
 *.sqlite
 *.log
 .env

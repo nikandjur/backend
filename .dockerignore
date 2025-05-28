@@ -7,8 +7,8 @@ docker-compose.yml
 # .env.*
 *.sqlite
 *.log
-.env.local
-.env.development
+.env
+.env.dev
 .env.staging
 __generated__
 swagger.json

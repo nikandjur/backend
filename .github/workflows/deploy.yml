@@ -1,13 +1,9 @@
-name: Secure Root Deployment
+name: Production Deploy
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
-env:
-  TARGET_DIR: /root/myapp
-  TEMP_DIR: /tmp/deploy_${{ github.run_id }}
 
 jobs:
   deploy:
@@ -16,64 +12,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate critical files
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy files
         run: |
-          if [ ! -f "Dockerfile" ] || [ ! -f "docker-compose.prod.yml" ] || [ ! -f ".env.prod" ]; then
-            echo "::error::Missing required deployment files!"
-            exit 1
-          fi
+          scp -o StrictHostKeyChecking=no \
+              Dockerfile docker-compose.prod.yml .env.prod \
+              root@${{ secrets.SSH_HOST }}:/root/myapp/
+          
+          scp -r -o StrictHostKeyChecking=no \
+              dist/ prisma/ nginx/ \
+              root@${{ secrets.SSH_HOST }}:/root/myapp/
 
-      - name: Secure file transfer
-        uses: appleboy/scp-action@v7.0.2
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || '22' }}
-          source: "Dockerfile,docker-compose.prod.yml,.env.prod,dist/,prisma/,nginx/"
-          target: ${{ env.TEMP_DIR }}
-          rm: true
-          strip_components: 1
-
-      - name: Atomic deployment
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Create backup if exists
-            if [ -d "${{ env.TARGET_DIR }}" ]; then
-              backup_dir="/root/myapp_backup_$(date +%Y%m%d_%H%M%S)"
-              cp -R ${{ env.TARGET_DIR }} $backup_dir
-              echo "Created backup in $backup_dir"
-            fi
-
-            # Secure deployment procedure
-            mkdir -p ${{ env.TARGET_DIR }}
-            rsync -a --delete ${{ env.TEMP_DIR }}/ ${{ env.TARGET_DIR }}/
-            chmod 700 ${{ env.TARGET_DIR }}
-            chmod 600 ${{ env.TARGET_DIR }}/.env.prod
-            
-            # Docker operations
-            cd ${{ env.TARGET_DIR }}
-            docker-compose -f docker-compose.prod.yml down --remove-orphans
-            docker-compose -f docker-compose.prod.yml up -d --build
-            
-            # Cleanup
-            rm -rf ${{ env.TEMP_DIR }}
-            docker system prune -af --filter "until=24h"
-
-      - name: Verify deployment
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "### File permissions ###"
-            ls -la ${{ env.TARGET_DIR }}
-            echo -e "\n### Running containers ###"
-            docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
-            echo -e "\n### Service health ###"
-            docker-compose -f ${{ env.TARGET_DIR }}/docker-compose.prod.yml ps
+      - name: Restart services
+        run: |
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.SSH_HOST }} << 'EOF'
+          cd /root/myapp
+          docker-compose -f docker-compose.prod.yml down
+          docker-compose -f docker-compose.prod.yml up -d --build
+          docker system prune -af
+          EOF

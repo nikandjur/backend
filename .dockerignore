@@ -1,6 +1,5 @@
 # Исключаем всё, что не нужно в контейнере
 node_modules
-Dockerfile
 docker-compose.yml
 .dockerignore
 # .env

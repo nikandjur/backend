@@ -24,7 +24,7 @@ jobs:
               root@${{ secrets.SSH_HOST }}:/root/myapp/
           
           scp -r -o StrictHostKeyChecking=no \
-              dist/ prisma/ nginx/ \
+              dist/ tests/ prisma/ nginx/ \
               root@${{ secrets.SSH_HOST }}:/root/myapp/
 
       - name: Restart services

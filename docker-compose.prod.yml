@@ -64,15 +64,27 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/ssl:/etc/nginx/ssl
+      - ./html:/usr/share/nginx/html
     depends_on:
       - app
     restart: unless-stopped
+    networks:
+      - backend
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./nginx/ssl:/etc/letsencrypt
+      - ./html:/data/acme-challenge
+    environment:
+      TZ: Europe/Moscow
+    command: certbot certonly --webroot -w /data/acme-challenge -d api.blogpsy.ru --email your@email.com --agree-tos --no-eff-email
+    networks:
+      - backend
 
 volumes:
   pgdata:
   minio_data:
-  nginx_ssl:
-    driver: local
 
 networks:
   backend:

@@ -1,9 +1,13 @@
-name: Production Deploy
+name: Deploy Backend to VPS
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+env:
+  SSH_HOST: ${{ secrets.SSH_HOST }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
 jobs:
   deploy:
@@ -12,25 +16,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
       - name: Install SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ env.SSH_PRIVATE_KEY }}
 
-      - name: Deploy files
+      - name: Prepare deploy directory
         run: |
-          scp -o StrictHostKeyChecking=no \
-              Dockerfile docker-compose.prod.yml .env.prod \
-              root@${{ secrets.SSH_HOST }}:/root/myapp/
-          
-          scp -r -o StrictHostKeyChecking=no \
-              dist/ prisma/ nginx/ \
-              root@${{ secrets.SSH_HOST }}:/root/myapp/
+          mkdir -p ./deploy-root
+          cp Dockerfile docker-compose.prod.yml .env.prod ./deploy-root/
+          cp -r prisma nginx ./deploy-root/
+          mkdir -p ./deploy-root/html
+
+      - name: Copy files to server
+        run: |
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+            ./deploy-root/ root@${{ env.SSH_HOST }}:/var/www/api.blogpsy.ru
 
       - name: Restart services
         run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.SSH_HOST }} << 'EOF'
-          cd /root/myapp
+          ssh -o StrictHostKeyChecking=no root@${{ env.SSH_HOST }} << 'EOF'
+          cd /var/www/api.blogpsy.ru
           docker-compose -f docker-compose.prod.yml down
           docker-compose -f docker-compose.prod.yml up -d --build
           docker system prune -af

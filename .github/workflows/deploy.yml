@@ -1,29 +1,37 @@
-name: Deploy to VPS
+name: Production Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Copy files to VPS
-        uses: appleboy/scp-action@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          source: "Dockerfile,docker-compose.prod.yml,.env.prod,dist/,prisma/,nginx/"
-          target: "~/myapp/"
-      
-      - name: Restart Docker
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd ~/myapp
-            docker-compose -f docker-compose.prod.yml down
-            docker-compose -f docker-compose.prod.yml up -d --build
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy files
+        run: |
+          scp -o StrictHostKeyChecking=no \
+              Dockerfile docker-compose.prod.yml .env.prod \
+              root@${{ secrets.SSH_HOST }}:/root/myapp/
+          
+          scp -r -o StrictHostKeyChecking=no \
+              dist/ prisma/ nginx/ \
+              root@${{ secrets.SSH_HOST }}:/root/myapp/
+
+      - name: Restart services
+        run: |
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.SSH_HOST }} << 'EOF'
+          cd /root/myapp
+          docker-compose -f docker-compose.prod.yml down
+          docker-compose -f docker-compose.prod.yml up -d --build
+          docker system prune -af
+          EOF

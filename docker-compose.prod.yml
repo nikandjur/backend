@@ -1,14 +1,26 @@
 services:
+  migrator:
+    image: andnikdoc/api.blogpsy.ru:latest
+    container_name: api-migrator
+    command: ["npx", "prisma", "migrate", "deploy"]
+    restart: "on-failure"
+    env_file:
+      - .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   app:
-    image: andnikdoc/api.blogpsy.ru:latest   # Готовый образ из Docker Hub
+    image: andnikdoc/api.blogpsy.ru:latest
+    container_name: api-blogpsy
     restart: unless-stopped
     ports:
       - "5000"
     env_file:
       - .env.prod
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     networks:
       - backend
 
@@ -19,7 +31,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d blogdb']
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -29,25 +41,18 @@ services:
   redis:
     image: redis:7
     restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 5s
-      retries: 5
     networks:
       - backend
 
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
-    env_file: .env.prod
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
-      interval: 30s
-      timeout: 20s
-      retries: 3
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
     networks:
       - backend
 
@@ -72,9 +77,7 @@ services:
     volumes:
       - ./nginx/ssl:/etc/letsencrypt
       - ./html:/data/acme-challenge
-    environment:
-      TZ: Europe/Moscow
-    command: certonly --webroot -w /data/acme-challenge -d api.blogpsy.ru --email your@email.com --agree-tos --no-eff-email
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h; done;'"
     networks:
       - backend
 
@@ -84,4 +87,3 @@ networks:
 
 volumes:
   pgdata:
-  minio_data:

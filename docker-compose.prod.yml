@@ -1,29 +1,6 @@
+version: '3.8'
+
 services:
-  migrator:
-    image: andnikdoc/api.blogpsy.ru:latest
-    container_name: api-migrator
-    command: ["npx", "prisma", "migrate", "deploy"]
-    restart: "on-failure"
-    env_file:
-      - .env.prod
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  app:
-    image: andnikdoc/api.blogpsy.ru:latest
-    container_name: api-blogpsy
-    restart: unless-stopped
-    ports:
-      - "5000"
-    env_file:
-      - .env.prod
-    depends_on:
-      migrator:
-        condition: service_completed_successfully
-    networks:
-      - backend
-
   postgres:
     image: postgres:15
     restart: unless-stopped
@@ -35,14 +12,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    networks:
-      - backend
 
   redis:
     image: redis:7
     restart: unless-stopped
-    networks:
-      - backend
 
   minio:
     image: minio/minio
@@ -53,6 +26,18 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+
+  app:
+    image: andnikdoc/api.blogpsy.ru:latest
+    container_name: api-blogpsy
+    restart: unless-stopped
+    ports:
+      - "5000"
+    env_file:
+      - .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - backend
 
@@ -68,8 +53,6 @@ services:
     depends_on:
       - app
     restart: unless-stopped
-    networks:
-      - backend
 
   certbot:
     image: certbot/certbot
@@ -78,8 +61,6 @@ services:
       - ./nginx/ssl:/etc/letsencrypt
       - ./html:/data/acme-challenge
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h; done;'"
-    networks:
-      - backend
 
 networks:
   backend:

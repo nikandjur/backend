@@ -60,6 +60,24 @@ jobs:
           script: |
             cd /var/www/api.blogpsy.ru
             docker-compose -f docker-compose.prod.yml pull
-            docker-compose -f docker-compose.prod.yml down
-            docker-compose -f docker-compose.prod.yml up -d --build
+            
+      - name: Run migrations
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ env.SSH_KEY }}
+          script: |
+            cd /var/www/api.blogpsy.ru
+            docker-compose -f docker-compose.prod.yml run --rm app npx prisma migrate deploy
+
+      - name: Start services
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ env.SSH_KEY }}
+          script: |
+            cd /var/www/api.blogpsy.ru
+            docker-compose -f docker-compose.prod.yml up -d
             docker system prune -af

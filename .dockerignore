@@ -2,6 +2,7 @@
 node_modules
 docker-compose.yml
 .dockerignore
+dist
 .git
 *.sqlite
 *.log

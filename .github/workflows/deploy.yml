@@ -20,6 +20,7 @@ jobs:
       - name: Install dependencies and build
         run: |
           npm ci
+          npx prisma generate
           npm run build
 
       - name: Set up Docker Buildx

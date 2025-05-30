@@ -1,5 +1,5 @@
-import { prisma } from '../../db'
-import { UserProfile } from './types'
+import { prisma } from '../../db.js'
+import { UserProfile } from './types.js'
 
 export const getUserProfile = async (userId: string): Promise<UserProfile> => {
 	return prisma.user.findUniqueOrThrow({

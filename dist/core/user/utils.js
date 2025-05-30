@@ -1,4 +1,4 @@
-import { prisma } from '../../db';
+import { prisma } from '../../db.js';
 export const getUserProfile = async (userId) => {
     return prisma.user.findUniqueOrThrow({
         where: { id: userId },

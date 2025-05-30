@@ -3,7 +3,7 @@
 	"compilerOptions": {
 		"target": "ES2020",
 		"module": "NodeNext",
-		"moduleResolution": "NodeNext", // ← добавь это
+		"moduleResolution": "NodeNext",
 		"resolveJsonModule": true,
 		"sourceMap": false,
 		"noEmitOnError": true,
@@ -11,5 +11,5 @@
 		"rootDir": "./src"
 	},
 	"include": ["src/**/*"],
-	"exclude": ["node_modules"]
+	"exclude": ["node_modules", "dist"]
 }

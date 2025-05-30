@@ -17,10 +17,6 @@ COPY --from=builder /app/.env.prod ./
 # Убедись, что prisma установлен глобально
 RUN npm install -g prisma
 
-# Копируем скрипт ожидания
-COPY scripts/wait-for-db.sh /usr/local/bin/wait-for-db.sh
-RUN chmod +x /usr/local/bin/wait-for-db.sh
-
 RUN npm ci --only=production
 
 EXPOSE 5000

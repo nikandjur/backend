@@ -51,7 +51,7 @@ jobs:
           push: true
           tags: ${{ env.DOCKER_IMAGE }}
 
-      - name: Pull and Restart services
+      - name: Pull latest images
         uses: appleboy/ssh-action@master
         with:
           host: ${{ env.SSH_HOST }}
@@ -60,7 +60,19 @@ jobs:
           script: |
             cd /var/www/api.blogpsy.ru
             docker-compose -f docker-compose.prod.yml pull
-            
+
+      - name: Wait for PostgreSQL to be ready
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ${{ env.SSH_USER }}
+          key: ${{ env.SSH_KEY }}
+          script: |
+            cd /var/www/api.blogpsy.ru
+            echo "⏳ Waiting for PostgreSQL to accept connections..."
+            timeout 60 bash -c 'until docker-compose -f docker-compose.prod.yml exec postgres pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"; do sleep 5; done'
+            echo "✅ PostgreSQL is ready"
+
       - name: Run migrations
         uses: appleboy/ssh-action@master
         with:
@@ -69,7 +81,9 @@ jobs:
           key: ${{ env.SSH_KEY }}
           script: |
             cd /var/www/api.blogpsy.ru
+            echo "📦 Applying migrations..."
             docker-compose -f docker-compose.prod.yml run --rm app npx prisma migrate deploy
+            echo "✅ Migrations applied"
 
       - name: Start services
         uses: appleboy/ssh-action@master

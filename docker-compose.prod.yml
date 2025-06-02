@@ -1,8 +1,7 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15
+    container_name: blog-postgres
     restart: unless-stopped
     env_file: .env.prod
     volumes:
@@ -15,10 +14,12 @@ services:
 
   redis:
     image: redis:7
+    container_name: blog-redis
     restart: unless-stopped
 
   minio:
     image: minio/minio
+    container_name: blog-minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin

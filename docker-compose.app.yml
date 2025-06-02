@@ -1,0 +1,16 @@
+services:
+  app:
+    image: ${DOCKER_HUB_USERNAME}/api.blogpsy.ru:latest
+    container_name: blog-app
+    restart: unless-stopped
+    env_file: .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - blog-network  # Используем существующую сеть
+
+# Подключаем внешнюю сеть (она уже создана в db.yml)
+networks:
+  blog-network:
+    external: true  # Ключевая строка!

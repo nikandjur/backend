@@ -12,7 +12,6 @@ WORKDIR /app
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/.env.prod ./
 
 # Убедись, что prisma установлен глобально
 RUN npm install -g prisma

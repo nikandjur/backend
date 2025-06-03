@@ -1,3 +1,8 @@
+networks:
+  blog-network:
+    external: true
+    name: blog-network
+
 services:
   postgres:
     image: postgres:15
@@ -47,11 +52,6 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
-
-networks:
-  blog-network:
-    external: true
-    name: blog-network
 
 volumes:
   pgdata:

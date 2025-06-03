@@ -42,12 +42,8 @@ app.use(metricsMiddleware) // Middleware для сбора метрик
 
 // Эндпоинт /metrics
 app.get('/metrics', async (req, res) => {
-	if (process.env.NODE_ENV === 'development') {
-		res.set('Content-Type', register.contentType)
-		res.end(await register.metrics())
-	} else {
-		res.status(404).end()
-	}
+	res.set('Content-Type', register.contentType)
+	res.end(await register.metrics())
 })
 
 // Логирование входящих запросов

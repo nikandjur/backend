@@ -48,8 +48,8 @@ const options = {
 	},
 	// Пути зависят от окружения
 	apis: [
-		`${basePath}/docs/swagger-root${isProduction ? '.js' : '.ts'}`,
-		`${basePath}/modules/**/*.route{${isProduction ? '.js' : '.ts'}}`,
+		`${basePath}/docs/swagger-root.js`, // .js даже в dev-режиме (если сборка через tsc)
+		`${basePath}/modules/**/*.route.js`, // Только .js
 	],
 }
 
@@ -66,6 +66,12 @@ export const setupSwagger = (app: Express) => {
 		res.setHeader('Content-Type', 'application/json')
 		res.send(swaggerSpec)
 	})
+
+	console.log('[Swagger] Base path:', basePath)
+	console.log('[Swagger] Resolved files:', [
+		`${basePath}/docs/swagger-root.js`,
+		`${basePath}/modules/**/*.route.js`,
+	])
 
 	// 4. Настраиваем Swagger UI (передаем спецификацию напрямую)
 	app.use(

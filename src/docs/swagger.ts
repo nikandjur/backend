@@ -1,4 +1,5 @@
 // src/docs/swagger.ts
+
 import type { Express } from 'express'
 import fs from 'fs'
 import { dirname, resolve } from 'path'
@@ -6,9 +7,17 @@ import swaggerJSDoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
 import { fileURLToPath } from 'url'
 
+// Получаем текущий путь
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+// Определяем режим: dev или prod
+const isProduction = fs.existsSync(resolve(__dirname, '../../dist'))
+const basePath = isProduction
+	? resolve(__dirname, '../../dist')
+	: resolve(__dirname, '../../src')
+
+// Настройки OpenAPI
 const options = {
 	definition: {
 		openapi: '3.0.0',
@@ -38,16 +47,21 @@ const options = {
 			},
 		},
 	},
-	apis: ['./src/docs/swagger-root.ts', './src/modules/**/*.route.ts'],
+	apis: [
+		`${basePath}/docs/swagger-root${isProduction ? '.js' : '.ts'}`,
+		`${basePath}/modules/**/*.route{${isProduction ? '.js' : '.ts'}}`,
+	],
 }
 
 export const setupSwagger = (app: Express) => {
+	// Генерируем спецификацию
 	const swaggerSpec = swaggerJSDoc(options)
 
+	// Сохраняем в openapi.json
 	const outputPath = resolve(__dirname, '../../openapi.json')
 	fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))
 	console.log(`✅ OpenAPI документация сохранена в ${outputPath}`)
 
-
+	// Подключаем Swagger UI
 	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 }

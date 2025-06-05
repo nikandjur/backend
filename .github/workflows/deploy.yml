@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - name: Clean old dist
         run: |
           rm -rf dist/
@@ -55,6 +55,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ env.DOCKER_IMAGE }}
+          no-cache: true 
 
       - name: Run deploy.sh on server
         uses: appleboy/ssh-action@master

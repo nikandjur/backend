@@ -11,7 +11,7 @@ env:
   SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
   DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
-  DOCKER_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/api.blogpsy.ru:latest
+  DOCKER_IMAGE: ${{ secrets.DOCKER_HUB_USERNAME }}/api.blogpsy.ru:${{ github.sha }}
 
 jobs:
   deploy:
@@ -56,6 +56,10 @@ jobs:
           push: true
           tags: ${{ env.DOCKER_IMAGE }}
           no-cache: true 
+
+      # Ждём 30 секунд, чтобы образ точно появился в Docker Hub
+      - name: Wait for image propagation
+        run: sleep 30
 
       - name: Run deploy.sh on server
         uses: appleboy/ssh-action@master

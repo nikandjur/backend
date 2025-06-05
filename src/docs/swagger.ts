@@ -27,8 +27,8 @@ const options = {
 		},
 		servers: [
 			{
-				url: 'http://localhost:5000',
-				description: 'Локальный сервер',
+				url: 'https://api.blogpsy.ru', // 'http://localhost:5000'
+				description: 'сервер',
 			},
 		],
 		components: {

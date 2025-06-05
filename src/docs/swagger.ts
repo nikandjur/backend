@@ -1,6 +1,7 @@
 // src/docs/swagger.ts
 import type { Express } from 'express'
 import fs from 'fs'
+import path from 'path'
 import { dirname, resolve } from 'path'
 import swaggerJSDoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
@@ -53,30 +54,23 @@ const options = {
 }
 
 export const setupSwagger = (app: Express) => {
+	// 1. Генерируем спецификацию
 	const swaggerSpec = swaggerJSDoc(options)
 
-	// Для дебага сохраняем спецификацию
-	const outputPath = resolve(__dirname, '../../openapi.json')
+	// 2. Сохраняем в файл (опционально, для дебага)
+	const outputPath = path.resolve(__dirname, '../../openapi.json')
 	fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))
-	console.log(`✅ OpenAPI документация сохранена в ${outputPath}`)
 
-	// Явно указываем Content-Type и CORS для swagger.json
+	// 3. Отдаем спецификацию по URL
 	app.get('/swagger.json', (req, res) => {
 		res.setHeader('Content-Type', 'application/json')
-		res.setHeader('Access-Control-Allow-Origin', '*')
 		res.send(swaggerSpec)
 	})
 
-	// Правильная конфигурация Swagger UI
+	// 4. Настраиваем Swagger UI (передаем спецификацию напрямую)
 	app.use(
 		'/api-docs',
 		swaggerUi.serve,
-		swaggerUi.setup(swaggerSpec, {
-			explorer: true,
-			swaggerOptions: {
-				docExpansion: 'list',
-				defaultModelsExpandDepth: -1,
-			},
-		})
+		swaggerUi.setup(swaggerSpec) // ← Просто передаем объект, без лишних опций
 	)
 }

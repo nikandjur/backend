@@ -5,6 +5,7 @@
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
 		"resolveJsonModule": true,
+		"removeComments": false,
 		"sourceMap": false,
 		"noEmitOnError": true,
 		"outDir": "./dist",

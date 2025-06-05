@@ -1,5 +1,4 @@
 // src/docs/swagger.ts
-
 import type { Express } from 'express'
 import fs from 'fs'
 import { dirname, resolve } from 'path'
@@ -7,7 +6,6 @@ import swaggerJSDoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
 import { fileURLToPath } from 'url'
 
-// Получаем текущий путь
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
@@ -47,6 +45,7 @@ const options = {
 			},
 		},
 	},
+	// Пути зависят от окружения
 	apis: [
 		`${basePath}/docs/swagger-root${isProduction ? '.js' : '.ts'}`,
 		`${basePath}/modules/**/*.route{${isProduction ? '.js' : '.ts'}}`,
@@ -54,14 +53,29 @@ const options = {
 }
 
 export const setupSwagger = (app: Express) => {
-	// Генерируем спецификацию
+	// Генерируем спецификацию из аннотаций
 	const swaggerSpec = swaggerJSDoc(options)
 
-	// Сохраняем в openapi.json
+	// Сохраняем в файл (опционально, полезно для дебага)
 	const outputPath = resolve(__dirname, '../../openapi.json')
 	fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))
 	console.log(`✅ OpenAPI документация сохранена в ${outputPath}`)
 
-	// Подключаем Swagger UI
-	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+	// Роут, который будет использоваться Swagger UI
+	app.get('/swagger.json', (req, res) => {
+		res.json(swaggerSpec)
+	})
+
+	// Подключаем интерфейс
+	app.use(
+		'/api-docs',
+		swaggerUi.serve,
+		swaggerUi.setup(null, {
+			swaggerOptions: {
+				url: '/swagger.json',
+				docExpansion: 'list',
+				defaultModelsExpandDepth: -1,
+			},
+		})
+	)
 }

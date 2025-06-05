@@ -53,26 +53,27 @@ const options = {
 }
 
 export const setupSwagger = (app: Express) => {
-	// Генерируем спецификацию из аннотаций
 	const swaggerSpec = swaggerJSDoc(options)
 
-	// Сохраняем в файл (опционально, полезно для дебага)
+	// Для дебага сохраняем спецификацию
 	const outputPath = resolve(__dirname, '../../openapi.json')
 	fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))
 	console.log(`✅ OpenAPI документация сохранена в ${outputPath}`)
 
-	// Роут, который будет использоваться Swagger UI
+	// Явно указываем Content-Type и CORS для swagger.json
 	app.get('/swagger.json', (req, res) => {
-		res.json(swaggerSpec)
+		res.setHeader('Content-Type', 'application/json')
+		res.setHeader('Access-Control-Allow-Origin', '*')
+		res.send(swaggerSpec)
 	})
 
-	// Подключаем интерфейс
+	// Правильная конфигурация Swagger UI
 	app.use(
 		'/api-docs',
 		swaggerUi.serve,
-		swaggerUi.setup(null, {
+		swaggerUi.setup(swaggerSpec, {
+			explorer: true,
 			swaggerOptions: {
-				url: '/swagger.json',
 				docExpansion: 'list',
 				defaultModelsExpandDepth: -1,
 			},

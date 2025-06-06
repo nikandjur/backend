@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY!)
 
 export const sendVerificationEmail = async (email: string, token: string) => {
 	const verificationUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${token}`
-
+	console.log('email', email)
 	try {
 		const result = await resend.emails.send({
 			from: `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM}>`,
@@ -24,7 +24,7 @@ export const sendVerificationEmail = async (email: string, token: string) => {
 				}
 			`,
 		})
-
+		console.log('result', email, result)
 		if (result.error) {
 			throw result.error
 		}

@@ -54,12 +54,11 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ env.DOCKER_IMAGE }}
+          tags: ${{ env.DOCKER_IMAGE }} # Только один тег — sha коммита
           no-cache: true 
 
-      # Ждём 30 секунд, чтобы образ точно появился в Docker Hub
       - name: Wait for image propagation
-        run: sleep 30
+        run: sleep 10 # Можно сократить до 10 секунд
 
       - name: Run deploy.sh on server
         uses: appleboy/ssh-action@master
@@ -69,4 +68,5 @@ jobs:
           key: ${{ env.SSH_KEY }}
           script: |
             cd /var/www/api.blogpsy.ru
+            echo "TAG=${{ github.sha }}" > .env
             ./deploy.sh

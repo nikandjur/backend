@@ -68,5 +68,5 @@ jobs:
           key: ${{ env.SSH_KEY }}
           script: |
             cd /var/www/api.blogpsy.ru
-            echo "TAG=${{ github.sha }}" > .env
+            echo "TAG=${{ github.sha }}" > .env.tag
             ./deploy.sh

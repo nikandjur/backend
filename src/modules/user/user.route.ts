@@ -19,50 +19,37 @@ const router = Router()
  * /api/user/profile:
  *   put:
  *     summary: Обновить профиль текущего пользователя
+ *     description: Изменяет данные профиля текущего авторизованного пользователя
  *     tags: [Users]
+ *     operationId: updateCurrentUserProfile
  *     security:
  *       - bearerAuth: []
  *     requestBody:
+ *       required: true
+ *       description: Новые данные профиля
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 minLength: 2
- *                 maxLength: 50
- *               bio:
- *                 type: string
- *                 maxLength: 500
- *               website:
- *                 type: string
- *                 format: uri
- *             example:
- *               name: "Иван Петров"
- *               bio: "Люблю разрабатывать API"
- *               website: "https://example.com "
+ *             $ref: '#/components/schemas/UserUpdateProfileRequest'
  *     responses:
  *       200:
- *         description: Обновлённый профиль
+ *         description: Профиль успешно обновлен
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                 name:
- *                   type: string
- *                 bio:
- *                   type: string
- *                 website:
- *                   type: string
- *                   format: uri
+ *               $ref: '#/components/schemas/User'
  *       400:
- *         description: Ошибка валидации
+ *         description: Ошибка валидации входных данных
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidation'
  *       401:
- *         description: Не авторизован
+ *         description: Неавторизованный доступ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorUnauthorized'
  */
 router.put(
 	'/profile',
@@ -76,11 +63,13 @@ router.put(
  * /api/user/{userId}/posts:
  *   get:
  *     summary: Получить список постов пользователя с пагинацией
+ *     description: Возвращает список постов указанного пользователя с поддержкой пагинации
  *     tags: [Posts]
+ *     operationId: getUserPosts
  *     parameters:
  *       - name: userId
  *         in: path
- *         description: ID пользователя (cuid)
+ *         description: Идентификатор пользователя (cuid)
  *         required: true
  *         schema:
  *           type: string
@@ -107,16 +96,13 @@ router.put(
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   title:
- *                     type: string
- *                   excerpt:
- *                     type: string
+ *                 $ref: '#/components/schemas/Post'
  *       404:
  *         description: Пользователь или посты не найдены
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get(
 	'/:userId/posts',
@@ -130,11 +116,13 @@ router.get(
  * /api/user/{userId}:
  *   get:
  *     summary: Получить профиль пользователя по ID
+ *     description: Возвращает данные профиля пользователя по его идентификатору
  *     tags: [Users]
+ *     operationId: getUserProfileById
  *     parameters:
  *       - name: userId
  *         in: path
- *         description: ID пользователя (cuid)
+ *         description: Идентификатор пользователя (cuid)
  *         required: true
  *         schema:
  *           type: string
@@ -144,9 +132,13 @@ router.get(
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/UserProfile'
+ *               $ref: '#/components/schemas/User'
  *       404:
  *         description: Пользователь не найден
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get('/:userId', validate(userIdParamsSchema, 'params'), getUserProfile)
 

@@ -1,82 +1,53 @@
 // src/docs/swagger.ts
 import type { Express } from 'express'
-import fs from 'fs'
+import { fileURLToPath } from 'url'
 import path from 'path'
-import { dirname, resolve } from 'path'
+import fs from 'fs'
 import swaggerJSDoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
-import { fileURLToPath } from 'url'
 
+// Получаем __dirname в ES-модулях
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const __dirname = path.dirname(__filename)
 
-// Определяем режим: dev или prod
-const isProduction = fs.existsSync(resolve(__dirname, '../../dist'))
-const basePath = isProduction
-	? resolve(__dirname, '../../dist')
-	: resolve(__dirname, '../../src')
-
-// Настройки OpenAPI
 const options = {
 	definition: {
 		openapi: '3.0.0',
 		info: {
-			title: 'Main API',
+			title: 'Blog API',
 			version: '1.0.0',
-			description: 'API для работы с пользователями, постами и комментариями',
+			description: 'API для блога с пользователями, постами и комментариями',
 		},
 		servers: [
 			{
-				url: 'https://api.blogpsy.ru', // 'http://localhost:5000'
-				description: 'сервер',
+				url: 'http://localhost:5000',
+				description: 'Development server',
+			},
+			{
+				url: 'https://api.blogpsy.ru',
+				description: 'Production server',
 			},
 		],
-		components: {
-			securitySchemes: {
-				bearerAuth: {
-					type: 'http',
-					scheme: 'bearer',
-					bearerFormat: 'JWT',
-				},
-				cookieAuth: {
-					type: 'apiKey',
-					in: 'cookie',
-					name: 'sessionId',
-				},
-			},
-		},
 	},
-	// Пути зависят от окружения
 	apis: [
-		`${basePath}/docs/swagger-root.js`, // .js даже в dev-режиме (если сборка через tsc)
-		`${basePath}/modules/**/*.route.js`, // Только .js
+		path.resolve(__dirname, '../../src/docs/swagger-root.ts'),
+		path.resolve(__dirname, '../../src/modules/**/*.route.ts'),
 	],
 }
 
 export const setupSwagger = (app: Express) => {
-	// 1. Генерируем спецификацию
 	const swaggerSpec = swaggerJSDoc(options)
 
-	// 2. Сохраняем в файл (опционально, для дебага)
-	const outputPath = path.resolve(__dirname, '../../openapi.json')
-	fs.writeFileSync(outputPath, JSON.stringify(swaggerSpec, null, 2))
+	// Для дебага (опционально)
+	fs.writeFileSync(
+		path.resolve(__dirname, '../../openapi.json'),
+		JSON.stringify(swaggerSpec, null, 2)
+	)
 
-	// 3. Отдаем спецификацию по URL
-	app.get('/swagger.json', (req, res) => {
+	app.get('/swagger.json', (_, res) => {
 		res.setHeader('Content-Type', 'application/json')
 		res.send(swaggerSpec)
 	})
 
-	console.log('[Swagger] Base path:', basePath)
-	console.log('[Swagger] Resolved files:', [
-		`${basePath}/docs/swagger-root.js`,
-		`${basePath}/modules/**/*.route.js`,
-	])
-
-	// 4. Настраиваем Swagger UI (передаем спецификацию напрямую)
-	app.use(
-		'/api-docs',
-		swaggerUi.serve,
-		swaggerUi.setup(swaggerSpec) // ← Просто передаем объект, без лишних опций
-	)
+	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 }

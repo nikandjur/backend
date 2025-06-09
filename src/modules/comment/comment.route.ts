@@ -19,7 +19,9 @@ const router = Router()
  * /api/posts/{postId}/comments:
  *   post:
  *     summary: Создать новый комментарий
+ *     description: Добавляет комментарий к указанному посту от имени авторизованного пользователя
  *     tags: [Comments]
+ *     operationId: createComment
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -28,9 +30,10 @@ const router = Router()
  *         required: true
  *         schema:
  *           type: string
- *         description: ID поста
+ *         description: Идентификатор поста, к которому добавляется комментарий
  *     requestBody:
  *       required: true
+ *       description: Текст комментария
  *       content:
  *         application/json:
  *           schema:
@@ -43,9 +46,17 @@ const router = Router()
  *             schema:
  *               $ref: '#/components/schemas/Comment'
  *       400:
- *         description: Ошибка валидации
+ *         description: Ошибка валидации входных данных
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorValidation'
  *       401:
  *         description: Неавторизованный доступ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorUnauthorized'
  */
 router.post(
 	'/posts/:postId/comments',
@@ -60,14 +71,16 @@ router.post(
  * /api/posts/{postId}/comments:
  *   get:
  *     summary: Получить комментарии к посту
+ *     description: Возвращает список всех комментариев, связанных с указанным постом
  *     tags: [Comments]
+ *     operationId: getPostComments
  *     parameters:
  *       - in: path
  *         name: postId
  *         required: true
  *         schema:
  *           type: string
- *         description: ID поста
+ *         description: Идентификатор поста
  *     responses:
  *       200:
  *         description: Список комментариев
@@ -79,6 +92,10 @@ router.post(
  *                 $ref: '#/components/schemas/Comment'
  *       404:
  *         description: Пост не найден
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorNotFound'
  */
 router.get(
 	'/posts/:postId/comments',
@@ -91,7 +108,9 @@ router.get(
  * /api/comments/{id}:
  *   delete:
  *     summary: Удалить комментарий
+ *     description: Удаляет комментарий по его ID, если у пользователя есть на это права
  *     tags: [Comments]
+ *     operationId: deleteComment
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -100,17 +119,29 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
- *         description: ID комментария
+ *         description: Идентификатор комментария
  *     responses:
  *       204:
  *         description: Комментарий успешно удален
  *         content: {}
  *       401:
  *         description: Неавторизованный доступ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorUnauthorized'
  *       403:
  *         description: Нет прав на удаление
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorForbidden'
  *       404:
  *         description: Комментарий не найден
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorNotFound'
  */
 router.delete(
 	'/comments/:id',

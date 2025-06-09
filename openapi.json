@@ -1,230 +1,60 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Main API",
+    "title": "Blog API",
     "version": "1.0.0",
-    "description": "API для работы с пользователями, постами и комментариями"
+    "description": "API для блога с пользователями, постами и комментариями"
   },
   "servers": [
     {
       "url": "http://localhost:5000",
-      "description": "Локальный сервер"
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.blogpsy.ru",
+      "description": "Production server"
     }
   ],
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      },
-      "cookieAuth": {
-        "type": "apiKey",
-        "in": "cookie",
-        "name": "sessionId"
-      }
-    },
-    "schemas": {
-      "Post": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "clnjak7xj000008l0a9zq3k4f"
-          },
-          "title": {
-            "type": "string",
-            "example": "Мой первый пост"
-          },
-          "content": {
-            "type": "string",
-            "example": "Содержание моего первого поста"
-          },
-          "likes": {
-            "type": "integer",
-            "example": 5
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2023-10-01T12:00:00Z"
-          },
-          "author": {
-            "$ref": "#/components/schemas/User"
-          }
-        }
-      },
-      "PostCreate": {
-        "type": "object",
-        "required": [
-          "title",
-          "content"
-        ],
-        "properties": {
-          "title": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 100,
-            "example": "Мой первый пост"
-          },
-          "content": {
-            "type": "string",
-            "minLength": 10,
-            "maxLength": 5000,
-            "example": "Содержание моего первого поста"
-          }
-        }
-      },
-      "PostUpdate": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/PostCreate"
-          },
-          {
-            "type": "object",
-            "properties": {}
-          }
-        ]
-      },
-      "CommentCreate": {
-        "type": "object",
-        "required": [
-          "text"
-        ],
-        "properties": {
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1000,
-            "example": "Новый комментарий",
-            "description": "Текст комментария"
-          }
-        }
-      },
-      "Comment": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "clw8qx7uh000008jt2ok0b9vz"
-          },
-          "text": {
-            "type": "string",
-            "example": "Комментарий"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "postId": {
-            "type": "string"
-          }
-        }
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "clnjak7xj000008l0a9zq3k4f"
-          },
-          "name": {
-            "type": "string",
-            "example": "Иван Иванов"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "user@example.com"
-          },
-          "avatarUrl": {
-            "type": "string",
-            "format": "uri",
-            "example": "https://example.com/avatar.jpg "
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2023-10-01T12:00:00Z"
-          }
-        }
-      },
-      "UserProfile": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "avatarUrl": {
-            "type": "string",
-            "format": "uri"
-          },
-          "bio": {
-            "type": "string"
-          },
-          "website": {
-            "type": "string",
-            "format": "uri"
-          },
-          "emailVerified": {
-            "type": "boolean"
-          },
-          "postsCount": {
-            "type": "integer"
-          }
-        }
-      }
-    }
-  },
   "paths": {
     "/api/auth/register": {
       "post": {
         "summary": "Регистрация нового пользователя",
+        "description": "Создает нового пользователя и отправляет письмо подтверждения email",
         "tags": [
           "Auth"
         ],
+        "operationId": "registerUser",
         "requestBody": {
           "required": true,
+          "description": "Данные нового пользователя",
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "email",
-                  "password",
-                  "name"
-                ],
-                "properties": {
-                  "email": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/RegisterRequest"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Пользователь создан"
+            "description": "Пользователь успешно зарегистрирован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdResponse"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Ошибка валидации"
+            "description": "Ошибка валидации входных данных",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
           }
         }
       }
@@ -232,37 +62,52 @@
     "/api/auth/login": {
       "post": {
         "summary": "Вход в систему",
+        "description": "Аутентификация пользователя по email и паролю",
         "tags": [
           "Auth"
         ],
+        "operationId": "loginUser",
         "requestBody": {
           "required": true,
+          "description": "Данные для аутентификации",
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "email",
-                  "password"
-                ],
-                "properties": {
-                  "email": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  }
-                }
+                "$ref": "#/components/schemas/LoginRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Успешный вход"
+            "description": "Успешный вход",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Неверные данные"
+            "description": "Неверные данные",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неавторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -270,15 +115,35 @@
     "/api/auth/logout": {
       "post": {
         "summary": "Выход пользователя (удаление sessionId из cookie)",
+        "description": "Завершает текущую сессию пользователя",
         "tags": [
           "Auth"
         ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Успешный выход"
+            "description": "Успешный выход",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Недействительный sessionId"
+            "description": "Недействительный sessionId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -286,6 +151,7 @@
     "/api/auth/me": {
       "get": {
         "summary": "Получить информацию о текущем пользователе",
+        "description": "Возвращает данные авторизованного пользователя",
         "tags": [
           "Auth"
         ],
@@ -300,32 +166,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    },
-                    "user": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
           },
           "401": {
-            "description": "Неавторизован"
+            "description": "Неавторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -333,6 +187,7 @@
     "/api/auth/verify-email": {
       "get": {
         "summary": "Подтверждение email",
+        "description": "Подтверждает email пользователя по токену из ссылки",
         "tags": [
           "Auth"
         ],
@@ -353,18 +208,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "user": {
-                      "$ref": "#/components/schemas/User"
-                    }
-                  }
+                  "$ref": "#/components/schemas/VerifyEmailResponse"
                 }
               }
             }
           },
           "400": {
-            "description": "Неверный или просроченный токен"
+            "description": "Неверный или просроченный токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
           }
         }
       }
@@ -372,9 +229,11 @@
     "/api/auth/resend-verification": {
       "post": {
         "summary": "Повторная отправка письма подтверждения",
+        "description": "Отправляет повторное письмо подтверждения email",
         "tags": [
           "Auth"
         ],
+        "operationId": "resendVerificationEmail",
         "security": [
           {
             "cookieAuth": []
@@ -386,25 +245,40 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Verification email sent"
-                    }
-                  }
+                  "$ref": "#/components/schemas/ResendVerificationResponse"
                 }
               }
             }
           },
           "401": {
-            "description": "Не авторизован"
+            "description": "Не авторизован",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Email уже подтвержден"
+            "description": "Email уже подтвержден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorForbidden"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Слишком много запросов (лимит 5 в час)"
+            "description": "Слишком много запросов (лимит 5 в час)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TooManyRequests"
+                }
+              }
+            }
           }
         }
       }
@@ -412,9 +286,11 @@
     "/api/posts/{postId}/comments": {
       "post": {
         "summary": "Создать новый комментарий",
+        "description": "Добавляет комментарий к указанному посту от имени авторизованного пользователя",
         "tags": [
           "Comments"
         ],
+        "operationId": "createComment",
         "security": [
           {
             "bearerAuth": []
@@ -428,11 +304,12 @@
             "schema": {
               "type": "string"
             },
-            "description": "ID поста"
+            "description": "Идентификатор поста, к которому добавляется комментарий"
           }
         ],
         "requestBody": {
           "required": true,
+          "description": "Текст комментария",
           "content": {
             "application/json": {
               "schema": {
@@ -453,18 +330,34 @@
             }
           },
           "400": {
-            "description": "Ошибка валидации"
+            "description": "Ошибка валидации входных данных",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Неавторизованный доступ"
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           }
         }
       },
       "get": {
         "summary": "Получить комментарии к посту",
+        "description": "Возвращает список всех комментариев, связанных с указанным постом",
         "tags": [
           "Comments"
         ],
+        "operationId": "getPostComments",
         "parameters": [
           {
             "in": "path",
@@ -473,7 +366,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "ID поста"
+            "description": "Идентификатор поста"
           }
         ],
         "responses": {
@@ -491,7 +384,14 @@
             }
           },
           "404": {
-            "description": "Пост не найден"
+            "description": "Пост не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorNotFound"
+                }
+              }
+            }
           }
         }
       }
@@ -499,9 +399,11 @@
     "/api/comments/{id}": {
       "delete": {
         "summary": "Удалить комментарий",
+        "description": "Удаляет комментарий по его ID, если у пользователя есть на это права",
         "tags": [
           "Comments"
         ],
+        "operationId": "deleteComment",
         "security": [
           {
             "bearerAuth": []
@@ -515,7 +417,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "ID комментария"
+            "description": "Идентификатор комментария"
           }
         ],
         "responses": {
@@ -524,13 +426,34 @@
             "content": {}
           },
           "401": {
-            "description": "Неавторизованный доступ"
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Нет прав на удаление"
+            "description": "Нет прав на удаление",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorForbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Комментарий не найден"
+            "description": "Комментарий не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorNotFound"
+                }
+              }
+            }
           }
         }
       }
@@ -538,9 +461,11 @@
     "/api/posts": {
       "post": {
         "summary": "Создать новый пост",
+        "description": "Авторизованный пользователь создаёт новый пост с заголовком, контентом и тегами",
         "tags": [
           "Posts"
         ],
+        "operationId": "createPost",
         "security": [
           {
             "bearerAuth": []
@@ -548,6 +473,7 @@
         ],
         "requestBody": {
           "required": true,
+          "description": "Данные нового поста",
           "content": {
             "application/json": {
               "schema": {
@@ -568,20 +494,36 @@
             }
           },
           "400": {
-            "description": "Ошибка валидации"
+            "description": "Ошибка валидации входных данных",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Неавторизованный доступ"
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/posts/search": {
       "get": {
-        "summary": "Поиск постов",
+        "summary": "Поиск постов по тексту",
+        "description": "Выполняет поиск постов по заданному запросу",
         "tags": [
           "Posts"
         ],
+        "operationId": "searchPosts",
         "parameters": [
           {
             "in": "query",
@@ -590,7 +532,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "технологии"
+            "example": "технологии",
+            "description": "Поисковый запрос"
           },
           {
             "in": "query",
@@ -598,7 +541,8 @@
             "schema": {
               "type": "integer",
               "default": 10
-            }
+            },
+            "description": "Максимальное количество результатов"
           },
           {
             "in": "query",
@@ -606,7 +550,8 @@
             "schema": {
               "type": "integer",
               "default": 0
-            }
+            },
+            "description": "Смещение от начала выборки"
           }
         ],
         "responses": {
@@ -624,7 +569,14 @@
             }
           },
           "400": {
-            "description": "Не указан поисковый запрос"
+            "description": "Не указан поисковой запрос",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
           }
         }
       }
@@ -632,9 +584,11 @@
     "/api/posts/top": {
       "get": {
         "summary": "Получить топ постов",
+        "description": "Возвращает список наиболее популярных (топовых) постов",
         "tags": [
           "Posts"
         ],
+        "operationId": "getTopPosts",
         "parameters": [
           {
             "in": "query",
@@ -642,7 +596,8 @@
             "schema": {
               "type": "integer",
               "default": 10
-            }
+            },
+            "description": "Количество возвращаемых постов"
           }
         ],
         "responses": {
@@ -665,9 +620,11 @@
     "/api/posts/{id}/like": {
       "post": {
         "summary": "Поставить лайк посту",
+        "description": "Авторизованный пользователь ставит лайк указанному посту",
         "tags": [
           "Posts"
         ],
+        "operationId": "likePost",
         "security": [
           {
             "bearerAuth": []
@@ -680,7 +637,8 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Идентификатор поста, которому ставится лайк"
           }
         ],
         "responses": {
@@ -688,10 +646,24 @@
             "description": "Лайк успешно поставлен"
           },
           "400": {
-            "description": "Уже лайкнуто"
+            "description": "Пользователь уже поставил лайк",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorForbidden"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Неавторизованный доступ"
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -699,9 +671,11 @@
     "/api/posts/{id}": {
       "get": {
         "summary": "Получить пост по ID",
+        "description": "Возвращает данные конкретного поста по его идентификатору",
         "tags": [
           "Posts"
         ],
+        "operationId": "getPostById",
         "parameters": [
           {
             "in": "path",
@@ -710,7 +684,8 @@
             "schema": {
               "type": "string"
             },
-            "example": "clnjak7xj000008l0a9zq3k4f"
+            "example": "clnjak7xj000008l0a9zq3k4f",
+            "description": "Идентификатор поста"
           }
         ],
         "responses": {
@@ -725,15 +700,24 @@
             }
           },
           "404": {
-            "description": "Пост не найден"
+            "description": "Пост не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorNotFound"
+                }
+              }
+            }
           }
         }
       },
       "patch": {
         "summary": "Обновить пост",
+        "description": "Обновляет данные существующего поста, если у пользователя есть права на редактирование",
         "tags": [
           "Posts"
         ],
+        "operationId": "updatePost",
         "security": [
           {
             "bearerAuth": []
@@ -746,11 +730,13 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Идентификатор поста"
           }
         ],
         "requestBody": {
           "required": true,
+          "description": "Новые данные поста",
           "content": {
             "application/json": {
               "schema": {
@@ -771,21 +757,44 @@
             }
           },
           "400": {
-            "description": "Ошибка валидации"
+            "description": "Ошибка валидации входных данных",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Неавторизованный доступ"
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Нет прав на редактирование"
+            "description": "Нет прав на редактирование",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorForbidden"
+                }
+              }
+            }
           }
         }
       },
       "delete": {
         "summary": "Удалить пост",
+        "description": "Удаляет пост по его ID, если у пользователя есть права на удаление",
         "tags": [
           "Posts"
         ],
+        "operationId": "deletePost",
         "security": [
           {
             "bearerAuth": []
@@ -798,18 +807,177 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Идентификатор поста"
           }
         ],
         "responses": {
           "204": {
-            "description": "Пост успешно удален"
+            "description": "Пост успешно удален",
+            "content": {}
           },
           "401": {
-            "description": "Неавторизованный доступ"
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Нет прав на удаление"
+            "description": "Нет прав на удаление",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorForbidden"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Пост не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorNotFound"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/avatar/upload-url": {
+      "post": {
+        "summary": "Получить временную ссылку для загрузки аватара",
+        "description": "Генерирует временную подписанную ссылку для загрузки изображения аватара через MinIO",
+        "tags": [
+          "Avatar"
+        ],
+        "operationId": "generateAvatarUploadUrl",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Временная ссылка для загрузки аватара",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/avatar/confirm": {
+      "post": {
+        "summary": "Подтвердить загрузку аватара",
+        "description": "Подтверждает успешную загрузку аватара по ключу объекта в MinIO",
+        "tags": [
+          "Avatar"
+        ],
+        "operationId": "confirmAvatarUpload",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Ключ объекта (ключ файла в хранилище)",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarConfirmRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Аватар успешно загружен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarConfirmResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/upload-url": {
+      "post": {
+        "summary": "Получить временную ссылку для загрузки файла",
+        "description": "Генерирует временную подписанную ссылку для загрузки произвольного файла через MinIO",
+        "tags": [
+          "Avatar"
+        ],
+        "operationId": "generateFileUploadUrl",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Имя файла и MIME-тип",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Временная ссылка для загрузки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadUrlResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -817,74 +985,57 @@
     "/api/user/profile": {
       "put": {
         "summary": "Обновить профиль текущего пользователя",
+        "description": "Изменяет данные профиля текущего авторизованного пользователя",
         "tags": [
           "Users"
         ],
+        "operationId": "updateCurrentUserProfile",
         "security": [
           {
             "bearerAuth": []
           }
         ],
         "requestBody": {
+          "required": true,
+          "description": "Новые данные профиля",
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 50
-                  },
-                  "bio": {
-                    "type": "string",
-                    "maxLength": 500
-                  },
-                  "website": {
-                    "type": "string",
-                    "format": "uri"
-                  }
-                },
-                "example": {
-                  "name": "Иван Петров",
-                  "bio": "Люблю разрабатывать API",
-                  "website": "https://example.com "
-                }
+                "$ref": "#/components/schemas/UserUpdateProfileRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Обновлённый профиль",
+            "description": "Профиль успешно обновлен",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "bio": {
-                      "type": "string"
-                    },
-                    "website": {
-                      "type": "string",
-                      "format": "uri"
-                    }
-                  }
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
           },
           "400": {
-            "description": "Ошибка валидации"
+            "description": "Ошибка валидации входных данных",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Не авторизован"
+            "description": "Неавторизованный доступ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            }
           }
         }
       }
@@ -892,14 +1043,16 @@
     "/api/user/{userId}/posts": {
       "get": {
         "summary": "Получить список постов пользователя с пагинацией",
+        "description": "Возвращает список постов указанного пользователя с поддержкой пагинации",
         "tags": [
           "Posts"
         ],
+        "operationId": "getUserPosts",
         "parameters": [
           {
             "name": "userId",
             "in": "path",
-            "description": "ID пользователя (cuid)",
+            "description": "Идентификатор пользователя (cuid)",
             "required": true,
             "schema": {
               "type": "string"
@@ -935,25 +1088,21 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "title": {
-                        "type": "string"
-                      },
-                      "excerpt": {
-                        "type": "string"
-                      }
-                    }
+                    "$ref": "#/components/schemas/Post"
                   }
                 }
               }
             }
           },
           "404": {
-            "description": "Пользователь или посты не найдены"
+            "description": "Пользователь или посты не найдены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorNotFound"
+                }
+              }
+            }
           }
         }
       }
@@ -961,14 +1110,16 @@
     "/api/user/{userId}": {
       "get": {
         "summary": "Получить профиль пользователя по ID",
+        "description": "Возвращает данные профиля пользователя по его идентификатору",
         "tags": [
           "Users"
         ],
+        "operationId": "getUserProfileById",
         "parameters": [
           {
             "name": "userId",
             "in": "path",
-            "description": "ID пользователя (cuid)",
+            "description": "Идентификатор пользователя (cuid)",
             "required": true,
             "schema": {
               "type": "string"
@@ -981,13 +1132,469 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserProfile"
+                  "$ref": "#/components/schemas/User"
                 }
               }
             }
           },
           "404": {
-            "description": "Пользователь не найден"
+            "description": "Пользователь не найден",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorNotFound"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sessionId"
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "IdResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "clnjak7xj000008l0a9zq3k4f"
+          }
+        }
+      },
+      "ErrorUnauthorized": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Unauthorized"
+          },
+          "error": {
+            "type": "string",
+            "example": "Invalid token"
+          },
+          "statusCode": {
+            "type": "integer",
+            "example": 401
+          }
+        }
+      },
+      "ErrorForbidden": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Forbidden"
+          },
+          "error": {
+            "type": "string",
+            "example": "You do not have access"
+          },
+          "statusCode": {
+            "type": "integer",
+            "example": 403
+          }
+        }
+      },
+      "ErrorValidation": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "statusCode": {
+            "type": "integer",
+            "example": 400
+          }
+        }
+      },
+      "ErrorNotFound": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Not found"
+          },
+          "error": {
+            "type": "string",
+            "example": "Resource not found"
+          },
+          "statusCode": {
+            "type": "integer",
+            "example": 404
+          }
+        }
+      },
+      "PaginationRequest": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+          }
+        }
+      },
+      "PaginationResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 100
+          },
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "example": 10
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 10
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "clnjak7xj000008l0a9zq3k4f"
+          },
+          "name": {
+            "type": "string",
+            "example": "Иван Иванов"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com/avatar.jpg"
+          },
+          "bio": {
+            "type": "string",
+            "example": "Люблю разрабатывать API"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-10-01T12:00:00Z"
+          }
+        }
+      },
+      "UserUpdateProfileRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "example": "Иван Петров"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Люблю разрабатывать API"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com"
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "password"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "example": "Иван Иванов"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "password123"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          }
+        }
+      },
+      "VerifyEmailResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Email успешно подтвержден"
+          }
+        }
+      },
+      "ResendVerificationResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Письмо подтверждения отправлено"
+          }
+        }
+      },
+      "Post": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "clnjak7xj000008l0a9zq3k4f"
+          },
+          "title": {
+            "type": "string",
+            "example": "Как писать хороший API"
+          },
+          "content": {
+            "type": "string",
+            "example": "API должен быть простым, предсказуемым и документированным..."
+          },
+          "authorId": {
+            "type": "string",
+            "example": "clnja0001user123456789"
+          },
+          "likesCount": {
+            "type": "integer",
+            "example": 123
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-10-01T12:00:00Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-10-02T14:00:00Z"
+          }
+        }
+      },
+      "PostCreate": {
+        "type": "object",
+        "required": [
+          "title",
+          "content"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 200,
+            "example": "Как писать хороший API"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 10,
+            "example": "API должен быть простым, предсказуемым и документированным..."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "example": [
+              "api",
+              "swagger"
+            ]
+          }
+        }
+      },
+      "PostUpdate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 200
+          },
+          "content": {
+            "type": "string",
+            "minLength": 10
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10
+          }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "clnjak7xj000008l0a9zq3k4f"
+          },
+          "content": {
+            "type": "string",
+            "example": "Хорошая статья!"
+          },
+          "authorId": {
+            "type": "string",
+            "example": "clnja0001user123456789"
+          },
+          "postId": {
+            "type": "string",
+            "example": "clp123456post987654321"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-10-01T12:00:00Z"
+          }
+        }
+      },
+      "CommentCreate": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 1000,
+            "example": "Очень полезный пост!"
+          }
+        }
+      },
+      "UploadUrlResponse": {
+        "type": "object",
+        "properties": {
+          "uploadUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://minio.example.com/presigned-url"
+          },
+          "key": {
+            "type": "string",
+            "example": "avatars/clnjak7xj000008l0a9zq3k4f.jpg"
+          }
+        }
+      },
+      "AvatarConfirmRequest": {
+        "type": "object",
+        "required": [
+          "key"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "avatars/clnjak7xj000008l0a9zq3k4f.jpg"
+          }
+        }
+      },
+      "AvatarConfirmResponse": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://minio.example.com/avatars/clnjak7xj000008l0a9zq3k4f.jpg"
+          }
+        }
+      },
+      "FileUploadRequest": {
+        "type": "object",
+        "required": [
+          "filename",
+          "contentType"
+        ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "example": "document.pdf"
+          },
+          "contentType": {
+            "type": "string",
+            "example": "application/pdf"
           }
         }
       }
@@ -996,11 +1603,23 @@
   "tags": [
     {
       "name": "Auth",
-      "description": "Авторизация и аутентификация"
+      "description": "Авторизация, регистрация, верификация"
+    },
+    {
+      "name": "Users",
+      "description": "Управление пользователями"
+    },
+    {
+      "name": "Posts",
+      "description": "Управление постами"
     },
     {
       "name": "Comments",
-      "description": "Управление комментариями к постам"
+      "description": "Управление комментариями"
+    },
+    {
+      "name": "Avatar",
+      "description": "Работа с аватарками через MinIO"
     }
   ]
 }

@@ -46,7 +46,7 @@ const router = Router()
 router.post(
 	'/',
 	authenticate,
-	validate(postSchema.create),
+	validate(postSchema.create, 'body'),
 	postController.createPost
 )
 

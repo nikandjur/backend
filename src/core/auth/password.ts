@@ -1,6 +1,6 @@
-import bcrypt from 'bcryptjs'
+import bcrypt from 'bcrypt'
 
-const SALT_ROUNDS = 12
+const SALT_ROUNDS = 10
 const MIN_PASSWORD_LENGTH = 8
 
 export const hashPassword = (password: string): Promise<string> => {

@@ -17,10 +17,10 @@ export const validate = (
 	source: 'body' | 'query' | 'params' = 'query'
 ) => {
 	return async (req: Request, _res: Response, next: NextFunction) => {
-    console.log('req.body',req.body)
+    
 		try {
 			const result = await schema.safeParseAsync(req[source])
- console.log('result', result)
+
 			if (!result.success) {
 				const firstIssue = result.error.issues[0]
 				const errorDetail: ValidationErrorDetail = {

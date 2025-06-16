@@ -1,27 +1,24 @@
 import crypto from 'crypto'
-import geoip from 'geoip-lite'
 import redis from '../services/redis/client.js'
 import { redisService } from '../services/redis/service.js'
 
 const SESSION_TTL = 60 * 60 * 24 * 7 // 7 дней
 
 export const sessionService = {
-	create: async (userId: string, role: string, ip: string | undefined) => {
+	create: async (userId: string, role: string) => {
 		const sessionId = crypto.randomBytes(32).toString('hex')
-		const geo = ip ? geoip.lookup(ip) : null // Проверяем наличие IP
-
 		await redisService.set(
 			`session:${sessionId}`,
-			JSON.stringify({
-				userId,
-				role,
-				ip: ip || null, // Сохраняем как null если IP нет
-				country: geo?.country || null,
-			}),
+			JSON.stringify({ userId, role }),
 			SESSION_TTL
 		)
+		await redis.sadd(`user:sessions:${userId}`, sessionId)
+		return sessionId
+	},
 
-		return sessionId // Возвращаем sessionId для установки в cookie
+	getSession: async (sessionId: string) => {
+		const data = await redisService.get(`session:${sessionId}`)
+		return data ? JSON.parse(data) : null
 	},
 
 	validate: async (sessionId: string) => {
@@ -33,16 +30,13 @@ export const sessionService = {
 	delete: (sessionId: string) => redisService.del(`session:${sessionId}`),
 
 	invalidateSessions: async (userId: string) => {
-		const keys = await redisService.keys('session:*')
-		const pipeline = redis.pipeline() // Используем pipeline для эффективности
+		const sessionIds = await redisService.smembers(`user:sessions:${userId}`)
+		const pipeline = redis.pipeline()
 
-		for (const key of keys) {
-			const data = await redisService.get(key)
-			if (data && JSON.parse(data).userId === userId) {
-				pipeline.del(key) // Добавляем в pipeline вместо immediate exec
-			}
-		}
+		sessionIds.forEach(id => {
+			pipeline.del(`session:${id}`)
+		})
 
-		await pipeline.exec() // Выполняем все удаления одним запросом
+		await pipeline.del(`user:sessions:${userId}`).exec()
 	},
 }

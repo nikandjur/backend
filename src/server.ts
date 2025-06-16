@@ -2,6 +2,7 @@ import 'dotenv/config'
 import app from './app.js'
 import './core/post/post.worker.js'
 import './core/storage/avatar.worker.js'
+import './core/services/email.worker.js'
 import { restoreRedisData } from './restoreRedisData.js' // Добавляем импорт
 
 const PORT = process.env.PORT || 5000

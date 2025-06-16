@@ -1,5 +1,6 @@
+// src/core/storage/service.ts
 import { logger } from '../services/logger.js'
-import { bucketName, minioClient } from './client.js'
+import { bucketName, minioClient, tempBucketName } from './client.js'
 
 export const initStorage = async () => {
 	try {
@@ -9,6 +10,16 @@ export const initStorage = async () => {
 			logger.info(`Bucket ${bucketName} created`)
 		}
 
+		const existsTemp = await minioClient.bucketExists(tempBucketName)
+		if (!existsTemp) {
+			await minioClient.makeBucket(tempBucketName, 'us-east-1')
+			logger.info(`Temporary bucket ${tempBucketName} created`)
+		}
+
+		// Настройка автоочистки
+		await setupTempBucketLifecycle()
+
+		// Политики доступа
 		await minioClient.setBucketPolicy(
 			bucketName,
 			JSON.stringify({
@@ -30,10 +41,12 @@ export const initStorage = async () => {
 }
 
 export const generatePresignedUrl = async (
+	temporary: boolean = false,
 	objectName: string,
 	expiry = 3600
 ) => {
-	return minioClient.presignedPutObject(bucketName, objectName, expiry)
+	const bucket = temporary ? tempBucketName : bucketName
+	return minioClient.presignedPutObject(bucket, objectName, expiry)
 }
 
 export const getObjectUrl = (objectName: string) => {
@@ -42,11 +55,12 @@ export const getObjectUrl = (objectName: string) => {
 }
 
 export const generateAvatarUploadData = async (userId: string) => {
-	const objectName = `avatars/${userId}-${Date.now()}`
+	const objectName = `avatars/${userId}-${Date.now()}.jpg`
+	const uploadUrl = await generatePresignedUrl(true, objectName)
+
 	return {
-		uploadUrl: await generatePresignedUrl(objectName),
+		uploadUrl,
 		objectName,
-		accessUrl: getObjectUrl(objectName),
 	}
 }
 
@@ -58,4 +72,22 @@ export const validateAvatarObjectName = (
 		throw new Error('Invalid avatar object name')
 	}
 	return getObjectUrl(objectName)
+}
+
+export const setupTempBucketLifecycle = async () => {
+	try {
+		await minioClient.setBucketLifecycle(tempBucketName, {
+			Rule: [
+				{
+					ID: 'clean-temp',
+					Status: 'Enabled',
+					Expiration: { Days: 1 },
+					Filter: { Prefix: '' }, // Все объекты в бакете
+				},
+			],
+		})
+		logger.info(`Lifecycle policy applied to ${tempBucketName}`)
+	} catch (error) {
+		logger.error('Failed to apply lifecycle policy', { error })
+	}
 }

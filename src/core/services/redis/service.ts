@@ -18,4 +18,15 @@ export const redisService = {
 
 	deleteVerificationToken: (token: string) =>
 		redis.del(`email-verification:${token}`),
+
+	// Оставляем как есть, но оптимизируем:
+	// setSession: (sessionId: string, data: object, ttl: number) =>
+	// 	redis.set(`session:${sessionId}`, JSON.stringify(data), 'EX', ttl),
+
+	setSession: async (sessionId: string, data: object, ttl: number) => {
+		await redis.hset(`session:${sessionId}`, data)
+		await redis.expire(`session:${sessionId}`, ttl)
+	},
+
+	smembers: (key: string) => redis.smembers(key), 
 }

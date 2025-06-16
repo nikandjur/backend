@@ -1,12 +1,12 @@
+// src/modules/storage/storage.schema.ts
 import { z } from 'zod'
 
-export const fileUploadSchema = z.object({
-	prefix: z.string().optional().default('uploads'),
-})
-
 export const avatarConfirmSchema = z.object({
-	objectName: z
+	key: z
 		.string()
-		.min(1, 'Object name is required')
-		.regex(/^avatars\/[a-z0-9-]+-\d+$/, 'Invalid avatar object name format'),
+		.min(1, 'Key is required')
+		.regex(
+			/^avatars\/[a-zA-Z0-9-]+\.(jpg|jpeg|png|webp)$/i,
+			'Invalid file format. Allowed: jpg, jpeg, png, webp'
+		),
 })

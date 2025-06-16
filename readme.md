@@ -1,7 +1,7 @@
-docker exec -it backend-postgres-1 psql -U postgres -d blogdb
+docker exec -it postgres-dev psql -U postgres -d blogdb
 
 
-docker inspect backend-postgres-1 | grep -A 10 Mounts
+docker inspect postgres-dev | grep -A 10 Mounts
 
 Запуск проекта
 Вариант 1: Полностью Docker
@@ -26,7 +26,7 @@ docker-compose logs -f postgres
 # Остановка всех сервисов
 docker-compose down
 # Остановка инфраструктуры
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
+docker-compose -f docker-compose.dev.yml down
 
 # Полный сброс (с удалением данных)
 docker-compose down -v
@@ -45,16 +45,7 @@ npx prisma studio
 
 
 Полная схема разработки
-Запускаем только инфраструктуру в Docker:
 
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up postgres redis
-Бэкенд запускаем локально с hot-reload:
-
-npm run dev
-Фронтенд (если есть) тоже локально:
-
-cd ../frontend
-npm run dev
 
 
 Администрирование
@@ -62,19 +53,6 @@ npm run dev
 rm -rf node_modules && npm install
 
 # Production-сборка
-Основные файлы окружения:
-
-.env.dev - для разработки
-
-.env.prod - для production
-
-Порты по умолчанию:
-
-Бэкенд: 5000
-
-PostgreSQL: 5432
-
-Redis: 6379
 
 Решение проблем
 Если порты заняты
@@ -82,15 +60,6 @@ Redis: 6379
 lsof -i :5432 # для PostgreSQL
 lsof -i :6379 # для Redis
 
-# Альтернативное решение - изменить порты в .env файлах
-Если не подключается к БД
-Проверьте правильность хоста в .env:
-
-Для Docker: postgres:5432
-
-Для локального: localhost:5432
-
-Убедитесь что сервис запущен:
 
 docker-compose ps
 **********
@@ -98,7 +67,7 @@ docker-compose ps
 docker ps
 # Подключитесь к контейнеру
 docker exec -it <container_name_or_id> redis-cli
-docker exec -it backend-redis-1 redis-cli
+docker exec -it redis-dev redis-cli
 # или через
 docker-compose exec redis redis-cli
 

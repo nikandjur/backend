@@ -16,10 +16,20 @@ services:
   redis:
     image: redis:7
     container_name: redis-dev
+    command:
+      - redis-server
+      - --save 60 1                # Сохранять раз в минуту, если есть изменения
+      - --maxmemory 256mb            # Лимит памяти
+      - --maxmemory-policy noeviction # Удалять ключи с ближайшим истечен TTL
+      # - --appendonly yes             # Включить AOF для лучшей персистентности
+      # - --appendfilename "appendonly.aof"  # Имя AOF файла
+      # - --dir /data                  # Путь к данным
+    volumes:
+      - redis_data:/data            # Монтируем том для RDB/AOF
     ports:
       - '6379:6379'
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -54,75 +64,10 @@ services:
       timeout: 20s
       retries: 3
 
-  # mailhog:
-  #   image: mailhog/mailhog
-  #   container_name: mailhog-dev
-  #   ports:
-  #     - '1025:1025' # SMTP порт
-  #     - '8025:8025' # Web интерфейс
-  #   restart: unless-stopped
-  #   networks:
-  #     default:
-  #       aliases:
-  #         - mailhog
-          
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus-dev
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./deploy/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-
-      
-  loki:
-    image: grafana/loki:latest
-    container_name: loki-dev
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./deploy/monitoring/loki:/etc/loki
-    command: 
-      - "-config.file=/etc/loki/loki-config.yaml"
-      - "-validation.allow-structured-metadata=false"
-
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana-dev
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./deploy/monitoring/grafana/provisioning:/etc/grafana/provisioning/dashboards
-      - ./deploy/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-      - grafana-storage:/var/lib/grafana
-    depends_on: [loki, prometheus]
-
-  # node-exporter:
-  #   image: quay.io/prometheus/node-exporter:latest
-  #   container_name: node-exporter
-  #   ports:
-  #     - "9100:9100"
-  #   volumes:
-  #     - "/proc:/host/proc:ro"
-  #     - "/sys:/host/sys:ro"
-  #     - "/:/rootfs:ro"
-  #   command:
-  #     - '--path.procfs=/host/proc'
-  #     - '--path.sysfs=/host/sys'
-  #   security_opt:
-  #     - seccomp:unconfined
-  #   cap_add:
-  #     - SYS_TIME
-  #     - SYS_ADMIN
-  #     - NET_ADMIN
-
+ 
 volumes:
   pg_data:
   minio_data:
   redisinsight_data:
-  grafana-storage:
+  redis_data:
+  # grafana-storage:

@@ -68,7 +68,14 @@ app.use(express.urlencoded({ extended: false, limit: '10kb' })) // Защита 
 app.use(express.json({ limit: '10kb', strict: true }))
 
 app.use(cookieParser())
-
+app.use((req, res, next) => {
+	
+	console.log(`[REQUEST] ${req.method} ${req.url}`, {
+		body: req.body,
+		query: req.query,
+	})
+	next()
+})
 // API роуты
 app.use('/admin/queues', serverAdapter.getRouter())
 app.use(sessionMiddleware) // Для всех роутов

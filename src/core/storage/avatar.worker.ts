@@ -1,27 +1,25 @@
+// src/core/storage/avatar.worker.ts
 import { Worker } from 'bullmq'
-import 'dotenv/config'
 import sharp from 'sharp'
 import { logger } from '../services/logger.js'
 import redis from '../services/redis/client.js'
-import { minioClient } from './client.js'
+import { minioClient, bucketName, tempBucketName } from './client.js'
+import { prisma } from '../../db.js'
 
 const worker = new Worker(
 	'avatar-optimization',
 	async job => {
+		const { userId, originalPath } = job.data
+		logger.info(`Processing avatar for user ${userId}, path: ${originalPath}`)
+
 		try {
-			const { userId, originalPath } = job.data
-			logger.info(`Processing avatar for user ${userId}, path: ${originalPath}`)
-
-			// 1. Получение файла из MinIO
-			const stream = await minioClient.getObject('uploads', originalPath)
+			const stream = await minioClient.getObject(tempBucketName, originalPath)
 			const chunks: Buffer[] = []
-
 			for await (const chunk of stream) {
 				chunks.push(chunk)
 			}
 			const originalBuffer = Buffer.concat(chunks)
 
-			// 2. Оптимизация с Sharp
 			const optimizedBuffer = await sharp(originalBuffer)
 				.resize(500, 500, {
 					fit: 'inside',
@@ -30,13 +28,19 @@ const worker = new Worker(
 				.webp({ quality: 80 })
 				.toBuffer()
 
-			// 3. Сохранение оптимизированного файла
-			const optimizedPath = `optimized/${userId}-${Date.now()}.webp`
-			await minioClient.putObject('uploads', optimizedPath, optimizedBuffer)
+			const optimizedPath = `avatars/${userId}.webp`
 
-			// 4. Удаление исходного файла (опционально)
-			await minioClient.removeObject('uploads', originalPath)
-			logger.info(`Avatar optimized and saved to ${optimizedPath}`)
+			// Сохраняем оптимизированный файл в основной бакет
+			await minioClient.putObject(bucketName, optimizedPath, optimizedBuffer)
+
+			// Удаляем временный файл
+			await minioClient.removeObject(tempBucketName, originalPath)
+
+			// Обновляем путь в БД
+			await prisma.user.update({
+				where: { id: userId },
+				data: { avatarUrl: optimizedPath }, // avatars/userid.webp
+			})
 
 			return optimizedPath
 		} catch (error) {
@@ -46,17 +50,16 @@ const worker = new Worker(
 	},
 	{ connection: redis }
 )
-console.log('avatar - worker')
 
-worker.on('failed', (job, error) => {
-	logger.error(`Job ${job?.id} failed: ${error.message}`)
+worker.on('failed', async job => {
+	const { userId, originalPath } = job?.data
+	logger.warn(`Deleting unprocessed avatar file: ${originalPath}`)
+	try {
+		await minioClient.removeObject(tempBucketName, originalPath)
+	} catch (err) {
+		logger.error('Failed to delete unprocessed avatar', { err })
+	}
 })
-worker.on('completed', job => {
-	if (!job.processedOn || !job.timestamp) return
 
-	logger.info({
-		event: 'avatar_processed',
-		userId: job.data.userId,
-		duration: job.processedOn - job.timestamp,
-	})
-})
+console.log('Avatar worker is running...')
+export default worker

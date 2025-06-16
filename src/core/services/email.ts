@@ -2,6 +2,12 @@ import { Resend } from 'resend'
 import { logger } from './logger.js'
 import { ERRORS } from '../utils/errors.js'
 
+export type EmailJob = {
+	type: 'verification'
+	email: string
+	token: string
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
 export const sendVerificationEmail = async (email: string, token: string) => {

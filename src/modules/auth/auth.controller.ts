@@ -43,7 +43,7 @@ export const login = async (
 ) => {
 	try {
 		const validatedData = loginSchema.parse(req.body)
-		logger.debug(`Login attempt for ${validatedData}`) 
+		logger.debug(`Login attempt for ${validatedData.email}`) 
 		const { user, sessionId } = await userService.login(
 			validatedData.email,
 			validatedData.password,
@@ -64,7 +64,7 @@ export const logout = async (
 ) => {
 	try {
 		await sessionService.delete(req.cookies.sessionId)
-		res.clearCookie('sessionId').sendStatus(204)
+		res.clearCookie('sessionId').json({ success: true })
 	} catch (err) {
 		next(err)
 	}
@@ -82,7 +82,7 @@ export const verifyEmailHandler = async (
 	try {
 		const { token } = emailVerificationSchema.parse(req.query)
 		// console.log('token',token,'req',req.query)
-		const { user, sessionId } = await userService.verifyEmail(token, req.ip)
+		const { user, sessionId } = await userService.verifyEmail(token)
 
 		setAuthCookie(res, sessionId)
 		res.json({ user })

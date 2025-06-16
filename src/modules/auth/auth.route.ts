@@ -90,7 +90,7 @@ router.post('/register', validate(registerSchema, 'body'), register)
  *             schema:
  *               $ref: '#/components/schemas/ErrorUnauthorized'
  */
-router.post('/login', verificationLimiter, validate(loginSchema), login)
+router.post('/login', verificationLimiter, validate(loginSchema, 'body'), login)
 
 /**
  * @swagger

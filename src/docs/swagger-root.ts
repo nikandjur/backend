@@ -141,7 +141,7 @@
  *         email:
  *           type: string
  *           format: email
- *           example: "user@example.com"
+ *           example: "delivered@resend.dev"
  *         avatarUrl:
  *           type: string
  *           format: uri
@@ -191,7 +191,7 @@
  *         email:
  *           type: string
  *           format: email
- *           example: "user@example.com"
+ *           example: "delivered@resend.dev"
  *         password:
  *           type: string
  *           minLength: 8
@@ -206,7 +206,7 @@
  *         email:
  *           type: string
  *           format: email
- *           example: "user@example.com"
+ *           example: "delivered@resend.dev"
  *         password:
  *           type: string
  *           example: "password123"

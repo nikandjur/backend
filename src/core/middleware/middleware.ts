@@ -2,35 +2,38 @@ import { NextFunction, Request, RequestHandler, Response } from 'express'
 import { prisma } from '../../db.js'
 import { sessionService } from '../auth/session.js'
 import { logger } from '../services/logger.js'
+import redis from '../services/redis/client.js'
 
 export const sessionMiddleware: RequestHandler = async (req, res, next) => {
 	const sessionId = req.cookies?.sessionId
 	if (!sessionId) return next()
 
 	try {
-		const session = await sessionService.validate(sessionId)
-		if (!session) {
+		// Используем новый метод getSession
+		const session = await sessionService.getSession(sessionId)
+		if (!session?.userId) {
 			res.clearCookie('sessionId')
 			return next()
 		}
 
-		const user = await prisma.user.findUnique({
-			where: { id: session.userId },
-			select: {
-				id: true,
-				email: true,
-				name: true,
-				emailVerified: true,
-			},
-		})
+		// Кешируем пользователя (пример на 1 минуту)
+		const user = await redis.get(`user:${session.userId}`).then(data =>
+			data
+				? JSON.parse(data)
+				: prisma.user
+						.findUnique({ where: { id: session.userId } })
+						.then(user => {
+							redis.set(
+								`user:${session.userId}`,
+								JSON.stringify(user),
+								'EX',
+								60
+							)
+							return user
+						})
+		)
 
-		if (user) {
-			req.user = {
-				...user,
-				role: session.role,
-			}
-		}
-
+		if (user) req.user = { ...user, role: session.role }
 		next()
 	} catch (error) {
 		logger.error('Session validation failed', { error })

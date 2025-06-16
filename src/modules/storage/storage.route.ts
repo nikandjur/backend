@@ -1,12 +1,13 @@
 import { Router } from 'express'
 import { authenticate } from '../../core/middleware/middleware.js'
+import { validate } from '../../core/middleware/validation.js'
 import {
 	handleConfirmAvatar,
+	handleDeleteAvatar,
 	handleGenerateAvatarUrl,
-	handleGenerateUploadUrl,
+	handleGetMediaFile,
 } from './storage.controller.js'
-import { avatarConfirmSchema, fileUploadSchema } from './storage.schema.js'
-import { validate } from '../../core/middleware/validation.js'
+import { avatarConfirmSchema } from './storage.schema.js'
 
 const router = Router()
 
@@ -70,34 +71,27 @@ router.post('/avatar/upload-url', authenticate, handleGenerateAvatarUrl)
 router.post(
 	'/avatar/confirm',
 	authenticate,
-	validate(avatarConfirmSchema),
+	validate(avatarConfirmSchema, 'body'),
 	handleConfirmAvatar
 )
 
 /**
  * @swagger
- * /api/upload-url:
- *   post:
- *     summary: Получить временную ссылку для загрузки файла
- *     description: Генерирует временную подписанную ссылку для загрузки произвольного файла через MinIO
+ * /api/avatar:
+ *   delete:
+ *     summary: Удалить текущий аватар пользователя
+ *     description: Удаляет аватар пользователя из хранилища и очищает ссылку в БД
  *     tags: [Avatar]
- *     operationId: generateFileUploadUrl
+ *     operationId: deleteAvatar
  *     security:
  *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       description: Имя файла и MIME-тип
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/FileUploadRequest'
  *     responses:
  *       '200':
- *         description: Временная ссылка для загрузки
+ *         description: Аватар успешно удален
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/UploadUrlResponse'
+ *               $ref: '#/components/schemas/AvatarConfirmResponse'
  *       401:
  *         description: Неавторизованный доступ
  *         content:
@@ -105,11 +99,30 @@ router.post(
  *             schema:
  *               $ref: '#/components/schemas/ErrorUnauthorized'
  */
-router.post(
-	'/upload-url',
-	authenticate,
-	validate(fileUploadSchema),
-	handleGenerateUploadUrl
-)
+router.delete('/avatar', authenticate, handleDeleteAvatar)
+
+/**
+ * @swagger
+ * /api/media:
+ *   get:
+ *     summary: Get file from storage
+ *     tags: [Media]
+ *     parameters:
+ *       - in: query
+ *         name: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: "avatars/user123.webp"
+ *     responses:
+ *       200:
+ *         description: File content
+ *         content:
+ *           image/webp:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
+router.get('/media', handleGetMediaFile);
 
 export default router

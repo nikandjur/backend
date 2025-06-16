@@ -97,6 +97,19 @@
  *         statusCode:
  *           type: integer
  *           example: 404
+ * 
+ *     ErrorTooManyRequests:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: "Too many requests, please try again later"
+ *         error:
+ *           type: string
+ *           example: "Rate limit exceeded"
+ *         statusCode:
+ *           type: integer
+ *           example: 429
  *
  *     # --- Пагинация ---
  *     PaginationRequest:
@@ -145,7 +158,7 @@
  *         avatarUrl:
  *           type: string
  *           format: uri
- *           example: "https://example.com/avatar.jpg"
+ *           example: "avatars/clnjak7xj000008l0a9zq3k4f.webp"
  *         bio:
  *           type: string
  *           example: "Люблю разрабатывать API"
@@ -330,7 +343,7 @@
  *         uploadUrl:
  *           type: string
  *           format: uri
- *           example: "https://minio.example.com/presigned-url"
+ *           example: "/presigned-url"
  *         key:
  *           type: string
  *           example: "avatars/clnjak7xj000008l0a9zq3k4f.jpg"
@@ -350,7 +363,7 @@
  *         avatarUrl:
  *           type: string
  *           format: uri
- *           example: "https://minio.example.com/avatars/clnjak7xj000008l0a9zq3k4f.jpg"
+ *           example: "avatars/clnjak7xj000008l0a9zq3k4f.webp"
  *
  *     FileUploadRequest:
  *       type: object

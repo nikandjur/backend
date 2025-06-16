@@ -26,8 +26,12 @@ export const handleConfirmAvatar = async (req: Request, res: Response) => {
 	validateAvatarObjectName(userId, key)
 
 	await avatarQueue.add('optimize-avatar', { userId, originalPath: key })
-
-	res.json({ success: true, message: 'Avatar processing started' })
+const optimizedPath = `avatars/${userId}.webp`
+	res.json({
+		success: true,
+		message: 'Avatar processing started',
+		avatarUrl: optimizedPath,
+	})
 }
 
 export const handleDeleteAvatar = async (req: Request, res: Response) => {

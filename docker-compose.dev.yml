@@ -20,7 +20,7 @@ services:
       - redis-server
       - --save 60 1                # Сохранять раз в минуту, если есть изменения
       - --maxmemory 256mb            # Лимит памяти
-      - --maxmemory-policy noeviction # Удалять ключи с ближайшим истечен TTL
+      - --maxmemory-policy noeviction 
       # - --appendonly yes             # Включить AOF для лучшей персистентности
       # - --appendfilename "appendonly.aof"  # Имя AOF файла
       # - --dir /data                  # Путь к данным

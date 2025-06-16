@@ -12,7 +12,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     networks:
       - blog-network
     healthcheck:
@@ -24,9 +24,19 @@ services:
   redis:
     image: redis:7
     container_name: blog-redis
+    command:
+      - redis-server
+      - --save 60 1                # Сохранять раз в минуту, если есть изменения
+      - --maxmemory 256mb            # Лимит памяти
+      - --maxmemory-policy noeviction 
+      # - --appendonly yes             # Включить AOF для лучшей персистентности
+      # - --appendfilename "appendonly.aof"  # Имя AOF файла
+      # - --dir /data                  # Путь к данным
+    volumes:
+      - redis_data:/data            # Монтируем том для RDB/AOF
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     networks:
       - blog-network
     healthcheck:
@@ -41,8 +51,8 @@ services:
     command: server /data --console-address ":9001"
     env_file: .env.prod
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -56,3 +66,4 @@ services:
 volumes:
   pgdata:
   minio_data:
+  redis_data:

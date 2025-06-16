@@ -1,18 +1,18 @@
 services:
   app:
-    image: andnikdoc/api.blogpsy.ru:latest
+    image: andnikdoc/api.blogpsy.ru:${TAG}
     container_name: blog-app
     restart: unless-stopped
-    env_file: .env.prod
+    env_file:
+      - .env.prod
+      - .env.tag
+
     ports:
       - "0.0.0.0:5000:5000"
+      - "0.0.0.0:5555:5555"
     networks:
       - blog-network
-    depends_on:
-      blog-postgres:
-        condition: service_healthy
-      blog-redis:
-        condition: service_healthy
+
 
 networks:
   blog-network:

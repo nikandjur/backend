@@ -14,13 +14,14 @@ import {
 import { slowRequestLogger } from './core/middleware/slowRequestLogger.js'
 import { initRoles } from './core/roles/init.js'
 import { logger } from './core/services/logger.js'
-import { initStorage } from './core/storage/service.js'
 import { setupSwagger } from './docs/swagger.js'
+import { initStorage } from './core/storage/service.js'
+import { serverAdapter } from './modules/monitoring/bull-board.js'
+import storageRouter from './modules/storage/storage.route.js'
 import authRouter from './modules/auth/auth.route.js'
 import commentRouter from './modules/comment/comment.route.js'
-import { serverAdapter } from './modules/monitoring/bull-board.js'
 import postRoutes from './modules/post/post.route.js'
-import storageRouter from './modules/storage/storage.route.js'
+import checkRouter from './modules/user/check.route.js'
 import userRouter from './modules/user/user.route.js'
 
 // Обработка необработанных Promise-отклонений
@@ -68,14 +69,14 @@ app.use(express.urlencoded({ extended: false, limit: '10kb' })) // Защита 
 app.use(express.json({ limit: '10kb', strict: true }))
 
 app.use(cookieParser())
-app.use((req, res, next) => {
+// app.use((req, res, next) => {
 	
-	console.log(`[REQUEST] ${req.method} ${req.url}`, {
-		body: req.body,
-		query: req.query,
-	})
-	next()
-})
+// 	console.log(`[REQUEST] ${req.method} ${req.url}`, {
+// 		body: req.body,
+// 		query: req.query,
+// 	})
+// 	next()
+// })
 // API роуты
 app.use('/admin/queues', serverAdapter.getRouter())
 app.use(sessionMiddleware) // Для всех роутов
@@ -86,6 +87,7 @@ app.use('/api/protected', authenticate)
 app.use('/api/auth', authRouter)
 app.use('/api/user', userRouter)
 app.use('/api/posts', postRoutes)
+app.use('/api/check', checkRouter)
 app.use('/api', storageRouter)
 app.use('/api', commentRouter)
 

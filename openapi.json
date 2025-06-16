@@ -177,7 +177,7 @@
           "avatarUrl": {
             "type": "string",
             "format": "uri",
-            "example": "https://example.com/avatar.jpg"
+            "example": "avatars/clnjak7xj000008l0a9zq3k4f.webp"
           },
           "bio": {
             "type": "string",
@@ -411,7 +411,7 @@
           "uploadUrl": {
             "type": "string",
             "format": "uri",
-            "example": "https://minio.example.com/presigned-url"
+            "example": "/presigned-url"
           },
           "key": {
             "type": "string",
@@ -437,7 +437,7 @@
           "avatarUrl": {
             "type": "string",
             "format": "uri",
-            "example": "https://minio.example.com/avatars/clnjak7xj000008l0a9zq3k4f.jpg"
+            "example": "avatars/clnjak7xj000008l0a9zq3k4f.webp"
           }
         }
       },
@@ -1441,6 +1441,64 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/check/email": {
+      "get": {
+        "summary": "Проверяет доступность email",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "email",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email",
+              "example": "test@example.com"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Результат проверки",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "available": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Неверный формат email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorValidation"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Слишком много запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorTooManyRequests"
                 }
               }
             }

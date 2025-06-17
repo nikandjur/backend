@@ -18,7 +18,7 @@ export const postService = {
 
 		await redis
 			.multi()
-			.hset(`post:${post.id}`, 'likes', 0, 'views', 0)
+			.hset(`post:${post.id}:stats`, 'likes', 0, 'views', 0)
 			.zadd('posts:top', 0, post.id)
 			.exec()
 
@@ -43,7 +43,7 @@ export const postService = {
 					author: { select: { id: true, name: true, avatarUrl: true } },
 				},
 			}),
-			redis.hmget(`post:${postId}`, 'likes', 'views'),
+			redis.hmget(`post:${postId}:stats`, 'likes', 'views'),
 		])
 
 		if (!post) return null

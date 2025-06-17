@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
-import { sessionService } from '../../core/auth/session.js'
 import { logger } from '../../core/services/logger.js'
+import { sessionService } from '../../core/services/session.js'
 import { userService } from '../../core/user/service.js'
 import { ERRORS } from '../../core/utils/errors.js'
 import {
@@ -43,7 +43,7 @@ export const login = async (
 ) => {
 	try {
 		const validatedData = loginSchema.parse(req.body)
-		logger.debug(`Login attempt for ${validatedData.email}`) 
+		logger.debug(`Login attempt for ${validatedData.email}`)
 		const { user, sessionId } = await userService.login(
 			validatedData.email,
 			validatedData.password,

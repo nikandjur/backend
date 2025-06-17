@@ -4,11 +4,10 @@ import {
 	generateVerificationToken,
 	verifyEmailToken,
 } from '../auth/email-verification.js'
-import { comparePassword, hashPassword } from '../auth/password.js'
-import { sessionService } from '../auth/session.js'
-import { sendVerificationEmail } from '../services/email.js'
-import { emailQueue } from '../services/email.queue.js'
+import { emailQueue } from '../auth/email.queue.js'
+import { comparePassword, hashPassword } from '../services/password.js'
 import { logger } from '../services/logger.js'
+import { sessionService } from '../services/session.js'
 import { UserProfile } from './types.js'
 
 type UserUpdateData = {
@@ -50,12 +49,9 @@ export const userService = {
 		return user
 	},
 
-
 	async login(email: string, password: string, ip?: string) {
-
-	
 		const user = await this.validateCredentials(email, password)
-		
+
 		if (!user.emailVerified) throw new Error('Email not verified')
 
 		const userWithRole = await prisma.user.findUnique({
@@ -64,23 +60,22 @@ export const userService = {
 		})
 
 		if (!userWithRole?.role) throw new Error('User role not found')
-	
+
 		const sessionId = await sessionService.create(
 			user.id,
-			userWithRole.role.name,
+			userWithRole.role.name
 		)
-		
+
 		return { user: { id: user.id }, sessionId }
 	},
 
 	// Валидация учётных данных
 	async validateCredentials(email: string, password: string) {
-		
 		const user = await prisma.user.findUnique({
 			where: { email },
 			select: { id: true, password: true, emailVerified: true },
 		})
-		
+
 		console.time('comparePassword')
 		if (!user || !(await comparePassword(password, user.password))) {
 			throw new Error('Invalid credentials')

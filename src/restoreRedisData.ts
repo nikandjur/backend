@@ -13,7 +13,7 @@ export const restoreRedisData = async () => {
 		for (const post of activePosts) {
 			await redis.hset(`post:${post.id}:stats`, {
 				likes: post.likesCount.toString(),
-				views: post.views.toString(), // Исправлено: было post.likesCount
+				views: post.views.toString(), 
 			})
 		}
 

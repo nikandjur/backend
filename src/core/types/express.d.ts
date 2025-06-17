@@ -6,7 +6,11 @@ declare global {
 		interface User {
 			id: string
 			email: string
-			name: string | null
+			name: string
+			avatarUrl: string | null
+			bio: string | null
+			website: string | null
+			emailVerified: Date | null
 			role: string
 		}
 

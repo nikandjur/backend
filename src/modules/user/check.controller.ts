@@ -1,9 +1,8 @@
 // src/modules/user/check.controller.ts
 import { Request, Response } from 'express'
+import redis from '../../core/services/redis/client.js'
 import { prisma } from '../../db.js'
 import { checkEmailSchema } from './check.schema.js'
-import { logger } from '../../core/services/logger.js'
-import  redis  from '../../core/services/redis/client.js'
 
 export const checkEmailAvailability = async (
 	req: Request,

@@ -1,44 +1,64 @@
 import { NextFunction, Request, RequestHandler, Response } from 'express'
 import { prisma } from '../../db.js'
-import { sessionService } from '../auth/session.js'
 import { logger } from '../services/logger.js'
 import redis from '../services/redis/client.js'
 
+
 export const sessionMiddleware: RequestHandler = async (req, res, next) => {
-	const sessionId = req.cookies?.sessionId
-	if (!sessionId) return next()
+    const sessionId = req.cookies?.sessionId
+    if (!sessionId) return next()
 
-	try {
-		// Используем новый метод getSession
-		const session = await sessionService.getSession(sessionId)
-		if (!session?.userId) {
-			res.clearCookie('sessionId')
-			return next()
-		}
+    try {
+        const sessionKey = `session:${sessionId}`
+        const sessionData = await redis.get(sessionKey)
 
-		// Кешируем пользователя (пример на 1 минуту)
-		const user = await redis.get(`user:${session.userId}`).then(data =>
-			data
-				? JSON.parse(data)
-				: prisma.user
-						.findUnique({ where: { id: session.userId } })
-						.then(user => {
-							redis.set(
-								`user:${session.userId}`,
-								JSON.stringify(user),
-								'EX',
-								60
-							)
-							return user
-						})
-		)
+        if (!sessionData) {
+            res.clearCookie('sessionId')
+            return next()
+        }
 
-		if (user) req.user = { ...user, role: session.role }
-		next()
-	} catch (error) {
-		logger.error('Session validation failed', { error })
-		next()
-	}
+        const session = JSON.parse(sessionData)
+        if (!session.userId) {
+            res.clearCookie('sessionId')
+            return next()
+        }
+
+        // Проверяем, есть ли пользователь в кэше
+        const cachedUser = await redis.get(`user:${session.userId}`)
+        let user = cachedUser ? JSON.parse(cachedUser) : null
+
+        if (!user) {
+            user = await prisma.user.findUnique({
+                where: { id: session.userId },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    avatarUrl: true,
+                    bio: true,
+                    website: true,
+                    emailVerified: true,
+                },
+            })
+
+            if (user) {
+                await redis.set(`user:${session.userId}`, JSON.stringify(user), 'EX', 60)
+            }
+        }
+
+        if (!user) {
+            res.clearCookie('sessionId')
+            return next()
+        }
+
+        req.user = { ...user, role: session.role }
+
+        next()
+    } catch (error) {
+        logger.error('Session validation failed', { error })
+        res.clearCookie('sessionId')
+        next()
+    }
 }
 
 export const authenticate: RequestHandler = (

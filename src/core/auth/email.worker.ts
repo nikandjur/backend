@@ -1,8 +1,7 @@
 import { Worker } from 'bullmq'
+import { EmailJob, sendVerificationEmail } from '../services/email.js'
 import { logger } from '../services/logger.js'
 import redis from '../services/redis/client.js'
-import { sendVerificationEmail } from './email.js'
-import { EmailJob } from './email.js'
 
 export const emailWorker = new Worker<EmailJob>(
 	'email-verification',
@@ -12,7 +11,7 @@ export const emailWorker = new Worker<EmailJob>(
 	},
 	{
 		connection: redis,
-		concurrency: 5, // Можно обрабатывать до 5 писем одновременно
+		concurrency: 5,
 	}
 )
 

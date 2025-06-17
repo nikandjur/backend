@@ -34,9 +34,12 @@ initStorage().catch(error => {
 	logger.error('MinIO init error', { error })
 })
 
-initRoles()
+initRoles().catch(error => {
+	logger.error('Roles init error', { error })
+})
 
 const app = express()
+
 app.use(httpLogger)
 app.use(slowRequestLogger(300)) // Логировать запросы дольше 300мс
 app.use(metricsMiddleware) // Middleware для сбора метрик
@@ -46,8 +49,6 @@ app.get('/metrics', async (req, res) => {
 	res.set('Content-Type', register.contentType)
 	res.end(await register.metrics())
 })
-
-// Логирование входящих запросов
 
 app.set('query parser', (str: string) => {
 	try {
@@ -67,23 +68,14 @@ app.use(
 app.use(helmet())
 app.use(express.urlencoded({ extended: false, limit: '10kb' })) // Защита от CSRF-атак
 app.use(express.json({ limit: '10kb', strict: true }))
-
 app.use(cookieParser())
-// app.use((req, res, next) => {
-	
-// 	console.log(`[REQUEST] ${req.method} ${req.url}`, {
-// 		body: req.body,
-// 		query: req.query,
-// 	})
-// 	next()
-// })
 // API роуты
 app.use('/admin/queues', serverAdapter.getRouter())
 app.use(sessionMiddleware) // Для всех роутов
 
 setupSwagger(app)
 
-app.use('/api/protected', authenticate)
+// app.use('/api/protected', authenticate)
 app.use('/api/auth', authRouter)
 app.use('/api/user', userRouter)
 app.use('/api/posts', postRoutes)

@@ -19,11 +19,12 @@ import {
 // 	})
 // }
 const setAuthCookie = (res: Response, sessionId: string) => {
-	res.cookie('token', 'your_token', {
+	res.cookie('sessionId', sessionId, {
 		httpOnly: true,
 		secure: false, // true для HTTPS (в проде), false для HTTP (локально)
 		sameSite: 'lax', // или 'lax' для прода
 		domain: 'blogpsy.ru', // Указываем основной домен (для поддоменов)
+		maxAge: 604800000, // 7 days
 	})
 }
 export const register = async (

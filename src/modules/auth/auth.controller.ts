@@ -21,8 +21,8 @@ import {
 const setAuthCookie = (res: Response, sessionId: string) => {
 	res.cookie('sessionId', sessionId, {
 		httpOnly: true,
-		secure: true, // true для HTTPS (в проде), false для HTTP (локально)
-		sameSite: 'none', // или 'lax' для http
+		secure: false, // true для HTTPS (в проде), false для HTTP (локально)
+		sameSite: 'lax', // или 'lax' для http
 		domain: 'dev.blogpsy.ru',
 		maxAge: 604800000, // 7 days
 	})

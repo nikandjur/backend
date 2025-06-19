@@ -23,7 +23,7 @@ const setAuthCookie = (res: Response, sessionId: string) => {
 		httpOnly: false,
 		secure: true, 
 		sameSite: 'none', 
-		domain: '.api.blogpsy.ru',
+		domain: '.blogpsy.ru',
 		maxAge: 604800000, // 7 days
 	})
 }

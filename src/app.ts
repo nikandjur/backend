@@ -59,12 +59,14 @@ app.set('query parser', (str: string) => {
 })
 
 // Базовые middleware
-app.use(
-	cors({
-		origin: process.env.CORS_ORIGIN || true,
-		credentials: true,
-	})
-)
+app.use(cors({
+  origin: [
+    'https://blogpsy.ru',      // Продакшен
+    'http://localhost:5173'   // Разработка
+  ],
+  credentials: true,
+  exposedHeaders: ['set-cookie']
+}))
 app.use(helmet())
 app.use(express.urlencoded({ extended: false, limit: '10kb' })) // Защита от CSRF-атак
 app.use(express.json({ limit: '10kb', strict: true }))

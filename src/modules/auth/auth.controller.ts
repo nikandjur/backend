@@ -20,10 +20,10 @@ import {
 // }
 const setAuthCookie = (res: Response, sessionId: string) => {
 	res.cookie('sessionId', sessionId, {
-		httpOnly: true,
+		httpOnly: false,
 		secure: true, 
 		sameSite: 'none', 
-		domain: '.blogpsy.ru',
+		domain: '.api.blogpsy.ru',
 		maxAge: 604800000, // 7 days
 	})
 }

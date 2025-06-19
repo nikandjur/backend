@@ -9,15 +9,23 @@ import {
 	registerSchema,
 } from './auth.schema.js'
 
+// для прода
+// const setAuthCookie = (res: Response, sessionId: string) => {
+// 	res.cookie('sessionId', sessionId, {
+// 		httpOnly: true,
+// 		secure: process.env.NODE_ENV === 'production',
+// 		maxAge: 604800000, // 7 days
+// 		sameSite: 'lax',
+// 	})
+// }
 const setAuthCookie = (res: Response, sessionId: string) => {
-	res.cookie('sessionId', sessionId, {
+	res.cookie('token', 'your_token', {
 		httpOnly: true,
-		secure: process.env.NODE_ENV === 'production',
-		maxAge: 604800000, // 7 days
-		sameSite: 'lax',
+		secure: false, // true для HTTPS (в проде), false для HTTP (локально)
+		sameSite: 'lax', // или 'lax' для прода
+		domain: 'blogpsy.ru', // Указываем основной домен (для поддоменов)
 	})
 }
-
 export const register = async (
 	req: Request,
 	res: Response,

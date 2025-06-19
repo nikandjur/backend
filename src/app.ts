@@ -62,7 +62,7 @@ app.set('query parser', (str: string) => {
 app.use(cors({
   origin: [
     'https://blogpsy.ru',      // Продакшен
-    'http://dev.blogpsy.ru:5173', // Локальная разработка
+    'https://dev.blogpsy.ru:5173', // Локальная разработка
     'http://localhost:5173'    // Фолбек
   ],
   credentials: true,

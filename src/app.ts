@@ -63,7 +63,6 @@ app.use(cors({
   origin: [
     'https://blogpsy.ru',      // Продакшен
     'https://dev.blogpsy.ru:5173', // Локальная разработка
-    'http://localhost:5173'    // Фолбек
   ],
   credentials: true,
   exposedHeaders: ['set-cookie']

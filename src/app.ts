@@ -1,6 +1,6 @@
+import express from 'express'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
-import express from 'express'
 import helmet from 'helmet'
 import qs from 'qs'
 import { handleError } from './core/middleware/handlerError.js'
@@ -67,11 +67,14 @@ app.use(cors({
   credentials: true,
   exposedHeaders: ['set-cookie']
 }));
-app.use(helmet())
+
+app.use(cookieParser())
+
+// app.use(helmet())
+
 app.use(express.urlencoded({ extended: false, limit: '10kb' })) // Защита от CSRF-атак
 app.use(express.json({ limit: '10kb', strict: true }))
-app.use(cookieParser())
-// API роуты
+
 app.use('/admin/queues', serverAdapter.getRouter())
 app.use(sessionMiddleware) // Для всех роутов
 

@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import { authenticate } from '../../core/middleware/middleware.js'
 import { validate } from '../../core/middleware/validation.js'
 import {
 	handleConfirmAvatar,
@@ -8,6 +7,7 @@ import {
 	handleGetMediaFile,
 } from './storage.controller.js'
 import { avatarConfirmSchema } from './storage.schema.js'
+import { authenticate } from '../../core/middleware/auth.middleware.js'
 
 const router = Router()
 

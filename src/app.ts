@@ -7,10 +7,6 @@ import { handleError } from './core/middleware/handlerError.js'
 import { httpLogger } from './core/middleware/httpLogger.js'
 import { register } from './core/middleware/metrics.js'
 import { metricsMiddleware } from './core/middleware/metrics.middleware.js'
-import {
-	authenticate,
-	sessionMiddleware,
-} from './core/middleware/middleware.js'
 import { slowRequestLogger } from './core/middleware/slowRequestLogger.js'
 import { initRoles } from './core/roles/init.js'
 import { logger } from './core/services/logger.js'
@@ -76,7 +72,6 @@ app.use(express.urlencoded({ extended: false, limit: '10kb' })) // Защита 
 app.use(express.json({ limit: '10kb', strict: true }))
 
 app.use('/admin/queues', serverAdapter.getRouter())
-app.use(sessionMiddleware) // Для всех роутов
 
 setupSwagger(app)
 

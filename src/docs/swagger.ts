@@ -45,18 +45,14 @@ const options = {
 				},
 			},
 		},
+		security: [{ bearerAuth: [] }],
 	},
+
 	// Пути зависят от окружения
 
 	apis: isProduction
-		? [
-				`${basePath}/docs/swagger-root.js`, 
-				`${basePath}/modules/**/*.route.js`,
-			]
-		: [
-				`${basePath}/docs/swagger-root.ts`, 
-				`${basePath}/modules/**/*.route.ts`, 
-			],
+		? [`${basePath}/docs/swagger-root.js`, `${basePath}/modules/**/*.route.js`]
+		: [`${basePath}/docs/swagger-root.ts`, `${basePath}/modules/**/*.route.ts`],
 }
 
 export const setupSwagger = (app: Express) => {

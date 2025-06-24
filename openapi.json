@@ -477,6 +477,11 @@
       }
     }
   },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/api/auth/register": {
       "post": {
@@ -583,7 +588,7 @@
         ],
         "security": [
           {
-            "cookieAuth": []
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -619,7 +624,7 @@
         ],
         "security": [
           {
-            "cookieAuth": []
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -698,7 +703,7 @@
         "operationId": "resendVerificationEmail",
         "security": [
           {
-            "cookieAuth": []
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -738,6 +743,51 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TooManyRequests"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "Обновление access токена",
+        "description": "Обновляет access token на основе refresh token'а из кук. Старая сессия аннулируется, создаётся новая.",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Токены успешно обновлены",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access_token": {
+                      "type": "string",
+                      "description": "Новый access token"
+                    }
+                  },
+                  "required": [
+                    "access_token"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неавторизован (неверный или просроченный refresh token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
                 }
               }
             }

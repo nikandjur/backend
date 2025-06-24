@@ -5,14 +5,9 @@ import {
 	verifyEmailToken,
 } from '../auth/email-verification.js'
 import { emailQueue } from '../auth/email.queue.js'
-import { comparePassword, hashPassword } from '../services/password.js'
 import { logger } from '../services/logger.js'
-import { sessionService } from '../services/session.js'
+import { comparePassword, hashPassword } from '../services/password.js'
 import { UserProfile } from './types.js'
-
-type UserUpdateData = {
-	avatarUrl: string
-}
 
 export const userService = {
 	// Регистрация
@@ -49,57 +44,50 @@ export const userService = {
 		return user
 	},
 
-	async login(email: string, password: string, ip?: string) {
+	async login(email: string, password: string) {
 		const user = await this.validateCredentials(email, password)
-
 		if (!user.emailVerified) throw new Error('Email not verified')
 
-		const userWithRole = await prisma.user.findUnique({
-			where: { id: user.id },
-			select: { id: true, role: true },
-		})
-
-		if (!userWithRole?.role) throw new Error('User role not found')
-
-		const sessionId = await sessionService.create(
-			user.id,
-			userWithRole.role.name
-		)
-
-		return { user: { id: user.id }, sessionId }
+		return {
+			user: {
+				id: user.id,
+				email: user.email,
+				name: user.name,
+				emailVerified: user.emailVerified,
+			},
+		}
 	},
 
-	// Валидация учётных данных
 	async validateCredentials(email: string, password: string) {
 		const user = await prisma.user.findUnique({
 			where: { email },
-			select: { id: true, password: true, emailVerified: true },
+			select: {
+				id: true,
+				name: true,
+				email: true,
+				password: true,
+				emailVerified: true,
+			},
 		})
 
-		console.time('comparePassword')
 		if (!user || !(await comparePassword(password, user.password))) {
 			throw new Error('Invalid credentials')
 		}
-		console.timeEnd('comparePassword')
+
 		return user
 	},
 
 	// Подтверждение email
 	async verifyEmail(token: string) {
-		// Добавляем параметр ip
 		const userId = await verifyEmailToken(token)
 
 		const user = await prisma.user.update({
 			where: { id: userId },
 			data: { emailVerified: new Date() },
-			select: { id: true, email: true, role: true }, // Добавляем role в выборку
+			select: { id: true, email: true },
 		})
 
-		if (!user.role) throw new Error('User role not found')
-
-		const sessionId = await sessionService.create(user.id, user.role.name)
-
-		return { user, sessionId }
+		return { user }
 	},
 
 	// Повторная отправка подтверждения
@@ -142,7 +130,7 @@ export const userService = {
 			},
 		})
 	},
-	// Общая функция обновления с типизацией
+	// Общая функция обновления 
 	async updateUser(
 		userId: string,
 		data: { avatarUrl: string } | { bio: string } | { website: string } // Объединяем все возможные обновления

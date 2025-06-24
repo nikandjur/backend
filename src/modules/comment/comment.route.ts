@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import { authenticate } from '../../core/middleware/middleware.js'
 import {
 	createCommentController,
 	deleteCommentController,
@@ -11,6 +10,7 @@ import {
 	createCommentSchema,
 } from './comment.schema.js'
 import { validate } from '../../core/middleware/validation.js'
+import { authenticate } from '../../core/middleware/auth.middleware.js'
 
 const router = Router()
 

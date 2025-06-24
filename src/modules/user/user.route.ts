@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import { authenticate } from '../../core/middleware/middleware.js'
 import {
 	getUserPosts,
 	getUserProfile,
@@ -11,6 +10,7 @@ import {
 	userIdParamsSchema,
 } from './user.schema.js'
 import { validate } from '../../core/middleware/validation.js'
+import { authenticate } from '../../core/middleware/auth.middleware.js'
 
 const router = Router()
 

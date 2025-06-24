@@ -5,13 +5,13 @@ declare global {
 	namespace Express {
 		interface User {
 			id: string
-			email: string
-			name: string
-			avatarUrl: string | null
-			bio: string | null
-			website: string | null
-			emailVerified: Date | null
-			role: string
+			email?: string
+			name?: string
+			avatarUrl?: string | null
+			bio?: string | null
+			website?: string | null
+			emailVerified?: Date | null
+			role?: string
 		}
 
 		interface Request {
@@ -19,6 +19,7 @@ declare global {
 			cookies: Record<string, string>
 			validatedQuery?: Record<string, unknown>
 			correlationId?: string
+			sessionId: string
 		}
 
 	}

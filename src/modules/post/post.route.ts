@@ -1,8 +1,9 @@
 import { Router } from 'express'
-import { authenticate } from '../../core/middleware/middleware.js'
+
 import { postController } from './post.controller.js'
 import { postSchema } from './post.schema.js'
 import { validate } from '../../core/middleware/validation.js'
+import { authenticate } from '../../core/middleware/auth.middleware.js'
 
 const router = Router()
 

@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
 import { logger } from '../../core/services/logger.js'
-import { sessionService } from '../../core/services/session.js'
 import { userService } from '../../core/user/service.js'
 import { ERRORS } from '../../core/utils/errors.js'
 import {
@@ -8,6 +7,9 @@ import {
 	loginSchema,
 	registerSchema,
 } from './auth.schema.js'
+import { jwtService } from '../../core/services/jwt.service.js'
+import { sessionService } from '../../core/services/session.service.js'
+import { error } from 'console'
 
 // для прода
 // const setAuthCookie = (res: Response, sessionId: string) => {
@@ -18,13 +20,12 @@ import {
 // 		sameSite: 'lax',
 // 	})
 // }
-const setAuthCookie = (res: Response, sessionId: string) => {
-	res.cookie('sessionId', sessionId, {
-		httpOnly: false,
-		secure: true, 
-		sameSite: 'none', 
-		domain: 'blogpsy.ru',
-		maxAge: 604800000, // 7 days
+const setAuthCookie = (res: Response, refreshToken: string) => {
+	res.cookie('refresh_token', refreshToken, {
+		httpOnly: true,
+		secure: true,
+		sameSite: 'none',
+		maxAge: 604800000, // 7 дней
 	})
 }
 export const register = async (
@@ -53,18 +54,29 @@ export const login = async (
 	try {
 		const validatedData = loginSchema.parse(req.body)
 		logger.debug(`Login attempt for ${validatedData.email}`)
-		const { user, sessionId } = await userService.login(
-			validatedData.email,
-			validatedData.password,
-			req.ip
-		)
 
-		setAuthCookie(res, sessionId)
-		res.json({ user })
+		const { user } = await userService.login(
+			validatedData.email,
+			validatedData.password
+		)
+		const { sessionId } = await sessionService.create(user.id)
+
+		const accessToken = jwtService.signAccessToken(user.id)
+		const refreshToken = jwtService.signRefreshToken(user.id, sessionId)
+
+		setAuthCookie(res, refreshToken)
+
+		res.json({
+			access_token: accessToken,
+			refresh_token: refreshToken,
+			user
+		})
 	} catch (err) {
 		next(err)
+
 	}
 }
+
 
 export const logout = async (
 	req: Request,
@@ -72,15 +84,77 @@ export const logout = async (
 	next: NextFunction
 ) => {
 	try {
-		await sessionService.delete(req.cookies.sessionId)
-		res.clearCookie('sessionId').json({ success: true })
+		const refreshToken = req.cookies.refresh_token
+		if (!refreshToken) { 
+			res.json({ success: true })
+			return
+		}
+		const payload = jwtService.verifyRefreshToken(refreshToken)
+		await sessionService.invalidateSession(payload.sessionId)
+
+		res.clearCookie('refresh_token')
+		 res.json({ success: true })
+		 return
+		
 	} catch (err) {
-		next(err)
+		 next(err)
 	}
 }
 
-export const getCurrentUser = (req: Request, res: Response) => {
-	res.json({ user: req.user })
+export const refresh = async (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const refreshToken = req.cookies.refresh_token
+		if (!refreshToken) {
+			res.status(400).json(ERRORS.refreshTokenRequired())
+			return 
+		}
+
+		const payload = jwtService.verifyRefreshToken(refreshToken)
+		const isValid = await sessionService.validateSession(
+			payload.sessionId,
+			payload.userId
+		)
+		await sessionService.invalidateSession(payload.sessionId)
+
+		if (!isValid) {
+			res.status(401).json(ERRORS.revokedSession())
+			return
+		} 
+		const { sessionId } = await sessionService.create(payload.userId)
+
+		const newAccessToken = jwtService.signAccessToken(payload.userId)
+		const newRefreshToken = jwtService.signRefreshToken(
+			payload.userId,
+			sessionId
+		)
+
+		setAuthCookie(res, newRefreshToken)
+		
+		res.json({ access_token: newAccessToken, refresh_token: newRefreshToken })
+	} catch (err) {
+		logger.error('Refresh token failed', { error: err })
+		res.status(401).json(ERRORS.refreshTokenExpired())
+		next(error)
+	}
+}
+
+
+export const getCurrentUser = async (req: Request, res: Response) => {
+	const userId = req.user.id
+
+	// Запрашиваем полный профиль из БД
+	const user = await userService.getUserProfile(userId)
+
+	if (!user) {
+		 res.status(404).json({ error: 'User not found' })
+		 return
+	}
+
+	res.json({ user })
 }
 
 export const verifyEmailHandler = async (
@@ -91,9 +165,9 @@ export const verifyEmailHandler = async (
 	try {
 		const { token } = emailVerificationSchema.parse(req.query)
 		// console.log('token',token,'req',req.query)
-		const { user, sessionId } = await userService.verifyEmail(token)
+		const { user} = await userService.verifyEmail(token)
 
-		setAuthCookie(res, sessionId)
+
 		res.json({ user })
 	} catch (err) {
 		next(err)
@@ -109,7 +183,9 @@ export const resendVerificationHandler = async (
 		if (!req.user) {
 			throw ERRORS.unauthorized('Authentication required')
 		}
-
+		if (!req.user.email) {
+			throw ERRORS.badRequest('Email is required for resending verification')
+		}
 		await userService.resendVerification(req.user.id, req.user.email)
 		logger.info(`Resent verification to ${req.user.email}`, {
 			userId: req.user.id,

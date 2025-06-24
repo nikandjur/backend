@@ -1,19 +1,17 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import {
-	authenticate,
-	sessionMiddleware,
-} from '../../core/middleware/middleware.js'
-import {
 	getCurrentUser,
 	login,
 	logout,
+	refresh,
 	register,
 	resendVerificationHandler,
 	verifyEmailHandler,
 } from './auth.controller.js'
 import { loginSchema, registerSchema } from './auth.schema.js'
 import { validate } from '../../core/middleware/validation.js'
+import { authenticate } from '../../core/middleware/auth.middleware.js'
 
 const router = Router()
 const verificationLimiter = rateLimit({
@@ -21,8 +19,6 @@ const verificationLimiter = rateLimit({
 	max: 5,
 	message: 'Too many requests, please try again later',
 })
-
-router.use(sessionMiddleware)
 
 /**
  * @swagger
@@ -100,7 +96,7 @@ router.post('/login', verificationLimiter, validate(loginSchema, 'body'), login)
  *     description: Завершает текущую сессию пользователя
  *     tags: [Auth]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Успешный выход
@@ -125,7 +121,7 @@ router.post('/logout', authenticate, logout)
  *     description: Возвращает данные авторизованного пользователя
  *     tags: [Auth]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Аутентифицированный пользователь
@@ -181,7 +177,7 @@ router.get('/verify-email', verifyEmailHandler)
  *     tags: [Auth]
  *     operationId: resendVerificationEmail
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Письмо отправлено
@@ -214,5 +210,37 @@ router.post(
 	verificationLimiter,
 	resendVerificationHandler
 )
+
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Обновление access токена
+ *     description: Обновляет access token на основе refresh token'а из кук. Старая сессия аннулируется, создаётся новая.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Токены успешно обновлены
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 access_token:
+ *                   type: string
+ *                   description: Новый access token
+ *               required:
+ *                 - access_token
+ *       401:
+ *         description: Неавторизован (неверный или просроченный refresh token)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorUnauthorized'
+ */
+router.post('/refresh', authenticate, refresh)
 
 export default router

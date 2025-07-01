@@ -34,9 +34,13 @@ export const initStorage = async () => {
 				],
 			})
 		)
-	} catch (error) {
-		logger.error('Storage init failed', { error })
-		throw error
+	} catch (error: unknown) {
+		if (error instanceof Error) {
+			logger.error('Storage init failed', { error: error.message });
+		} else {
+			logger.error('Storage init failed', { error: String(error) });
+		}
+		throw error;
 	}
 }
 

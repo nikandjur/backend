@@ -97,7 +97,7 @@
  *         statusCode:
  *           type: integer
  *           example: 404
- * 
+ *
  *     ErrorTooManyRequests:
  *       type: object
  *       properties:
@@ -223,6 +223,34 @@
  *         password:
  *           type: string
  *           example: "password123"
+ *
+ *     LoginResponse:
+ *       type: object
+ *       properties:
+ *         access_token:
+ *           type: string
+ *           example: "eyJhbGciOiJIUzI1NiIsInRIkpXVCJ9_-pcgtJlxq7hAAlII12iU"
+ *         refresh_token:
+ *           type: string
+ *           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eiZSIsIpRNvRjQ"
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *               example: "cmc3095ht0000t801ejdxggrp"
+ *             email:
+ *               type: string
+ *               format: email
+ *               example: "pochta@mail.com"
+ *             name:
+ *               type: string
+ *               example: "Andrey"
+ *             emailVerified:
+ *               type: string
+ *               format: date-time
+ *               example: "2025-06-19T06:35:24.285Z"
+ *
  *
  *     VerifyEmailResponse:
  *       type: object

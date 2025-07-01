@@ -72,7 +72,7 @@ router.post('/register', validate(registerSchema, 'body'), register)
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/SuccessResponse'
+ *               $ref: '#/components/schemas/LoginResponse'
  *       400:
  *         description: Неверные данные
  *         content:

@@ -34,9 +34,26 @@ export const initStorage = async () => {
 				],
 			})
 		)
+		await minioClient.setBucketPolicy(
+			tempBucketName,
+			JSON.stringify({
+				Version: '2012-10-17',
+				Statement: [
+					{
+						Effect: 'Allow',
+						Principal: '*',
+						Action: ['s3:*'],
+						Resource: [`arn:aws:s3:::${tempBucketName}/*`],
+					},
+				],
+			})
+		)
 	} catch (error: unknown) {
 		if (error instanceof Error) {
-			logger.error('Storage init failed', { error: error.message });
+			logger.error('Storage init failed', {
+				error: error.message,
+				stack: error.stack,
+			});
 		} else {
 			logger.error('Storage init failed', { error: String(error) });
 		}
